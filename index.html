@@ -186,6 +186,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Coluna de Entrada -->
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100 flex flex-col h-full">
+                    
                     <label for="crmInput" class="block text-sm font-semibold text-slate-700 mb-2">Dados do Cliente (CRM):</label>
                     <textarea id="crmInput" rows="12" class="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm text-slate-700 flex-1 resize-none bg-slate-50" placeholder="Ex: Histórico de ligações, produtos já comprados, objeções do cliente, faturamento recente..."></textarea>
                     
@@ -799,7 +800,7 @@
         }
 
         // --- Lógica da Inteligência do Gideão (Gemini API) ---
-        const apiKey = "AIzaSyD7LGDCJS37nKhSAHoaIcEANGTllhcMaw8"; 
+        const apiKey = ""; 
 
         async function fetchWithRetry(url, options, retries = 5) {
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -846,7 +847,7 @@ Formate sua resposta utilizando quebras de linha e coloque os títulos das seç�
             };
 
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
                 const result = await fetchWithRetry(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
