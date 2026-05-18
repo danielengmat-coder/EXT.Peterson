@@ -25,6 +25,21 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Loading spinner for AI */
+        .spinner {
+            border: 3px solid rgba(234, 88, 12, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #ea580c;
+            width: 24px;
+            height: 24px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -56,7 +71,7 @@
                     </div>
                     <label class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 shadow-sm font-bold text-sm">
                         <i data-lucide="upload-cloud" class="h-4 w-4"></i>
-                        <span>Importar MRR (CSV)</span>
+                        <span class="hidden sm:inline">Importar MRR (CSV)</span>
                         <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importCSV(event)">
                     </label>
                 </div>
@@ -70,10 +85,10 @@
                     <i data-lucide="map" class="h-4 w-4"></i> Rotas Estratégicas
                 </button>
                 <button onclick="switchTab('clientes')" id="tab-clientes" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2">
-                    <i data-lucide="table" class="h-4 w-4"></i> Planilha Consolidada
+                    <i data-lucide="table" class="h-4 w-4"></i> Planilha
                 </button>
-                <button onclick="switchTab('gideao')" id="tab-gideao" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2">
-                    <i data-lucide="brain-circuit" class="h-4 w-4"></i> Inteligência Gideão
+                <button onclick="switchTab('ia')" id="tab-ia" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2">
+                    <i data-lucide="sparkles" class="h-4 w-4 text-orange-500"></i> Gideão 
                 </button>
             </nav>
         </div>
@@ -188,34 +203,70 @@
             </div>
         </section>
 
-        <!-- GIDEÃO -->
-        <section id="sec-gideao" class="hidden fade-in">
+        <!-- Gideão -->
+        <section id="sec-ia" class="hidden fade-in">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <i data-lucide="bot" class="text-orange-500 h-8 w-8"></i> Analista de CRM (IA)
+                </h2>
+                <p class="text-slate-600 text-sm max-w-3xl">Cole abaixo as anotações, e-mails ou históricos do Pipedrive/CRM. A Inteligência Artificial irá processar o texto e extrair um resumo, calcular o risco de cancelamento (Churn) e apontar oportunidades de novos negócios (Upsell).</p>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                    <div class="mb-4">
-                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">🧠 Inteligência Gideão</h2>
-                        <p class="text-sm text-slate-500">Cole interações do CRM para analisar a viabilidade de expansão com a IA oficial da G30.</p>
-                    </div>
-                    <textarea id="crmInput" rows="12" class="w-full p-4 border rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-orange-500 outline-none custom-scrollbar" placeholder="Cole aqui os dados do negócio, resumo da reunião, objeções do cliente..."></textarea>
+                <!-- Input Area -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
+                    <label for="crmInput" class="block text-sm font-bold text-slate-700 mb-2">Histórico do CRM</label>
+                    <textarea id="crmInput" rows="12" class="w-full flex-1 p-4 rounded-lg border border-slate-300 focus:ring-2 focus:ring-orange-500 outline-none text-sm resize-none custom-scrollbar mb-4" placeholder="Cole aqui o texto da negociação, ticket de suporte ou anotações do vendedor..."></textarea>
                     
-                    <button onclick="copiarEAbrirGemini()" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3">
-                        <i data-lucide="bot"></i> Analisar Oportunidades no Gemini
+                    <button onclick="analyzeCRM()" id="btnAnalyze" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                        <i data-lucide="sparkles" class="h-5 w-5"></i> Analisar Dados
                     </button>
-                    <p class="text-[11px] text-slate-400 text-center mt-3">A abertura de nova aba funciona perfeitamente no GitHub Pages.</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
-                    <div id="gideaoEmptyState">
-                        <div class="bg-orange-50 p-6 rounded-full mb-4 inline-block">
-                            <i data-lucide="zap" class="h-10 w-10 text-orange-500"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-800">Assistente Gideão</h3>
-                        <p class="text-sm text-slate-500 max-w-xs mx-auto">O comando formatado enviará o contexto para o Google Gemini gerar estratégias de venda.</p>
+
+                <!-- Output Area -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 relative min-h-[400px]">
+                    <!-- Loading State -->
+                    <div id="aiLoading" class="hidden absolute inset-0 bg-slate-50/80 rounded-xl flex flex-col items-center justify-center z-10">
+                        <div class="spinner mb-4"></div>
+                        <p class="text-orange-600 font-bold text-sm">A analisar histórico...</p>
                     </div>
-                    <div id="gideaoResult" class="hidden fade-in">
-                        <i data-lucide="check-circle-2" class="h-16 w-16 text-emerald-500 mb-4 mx-auto"></i>
-                        <h3 class="text-xl font-bold text-slate-800">Copiado com Sucesso!</h3>
-                        <p class="text-sm text-slate-600 mb-6">Aceda à aba do Gemini e dê <strong>Ctrl+V (Colar)</strong> no chat para receber a estratégia tática.</p>
-                        <button onclick="resetGideao()" class="text-orange-600 font-bold hover:underline">Fazer Nova Análise</button>
+
+                    <!-- Empty State -->
+                    <div id="aiEmptyState" class="flex flex-col items-center justify-center h-full text-slate-400 opacity-60">
+                        <i data-lucide="brain-circuit" class="h-16 w-16 mb-4"></i>
+                        <p class="text-center text-sm px-8">Aguardando dados para análise.<br>Cole o texto ao lado e clique em Analisar.</p>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="aiResults" class="hidden h-full flex flex-col gap-4">
+                        
+                        <!-- Resumo -->
+                        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase flex items-center gap-1 mb-2">
+                                <i data-lucide="file-text" class="h-4 w-4"></i> Resumo da Interação
+                            </h4>
+                            <p id="aiResumo" class="text-sm text-slate-700 leading-relaxed"></p>
+                        </div>
+
+                        <!-- Churn Risk -->
+                        <div id="churnCard" class="p-4 rounded-lg border shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="text-xs font-bold uppercase flex items-center gap-1" id="churnTitleColor">
+                                    <i data-lucide="alert-triangle" class="h-4 w-4"></i> Risco de Churn
+                                </h4>
+                                <span id="aiRiscoNivel" class="px-2 py-1 rounded text-xs font-black uppercase tracking-wider">BAIXO</span>
+                            </div>
+                            <p id="aiRiscoMotivo" class="text-sm leading-relaxed"></p>
+                        </div>
+
+                        <!-- Upsell -->
+                        <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100 shadow-sm flex-1">
+                            <h4 class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 mb-2">
+                                <i data-lucide="trending-up" class="h-4 w-4"></i> Oportunidades de Upsell
+                            </h4>
+                            <p id="aiUpsell" class="text-sm text-emerald-800 leading-relaxed"></p>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -224,6 +275,135 @@
     </main>
 
     <script>
+        // ==========================================
+        // CONFIGURAÇÕES GEMINI AI API
+        // ==========================================
+        const apiKey = ""; // The execution environment provides the key at runtime
+
+        async function fetchWithRetry(url, options, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                    await new Promise(r => setTimeout(r, delays[i]));
+                }
+            }
+        }
+
+        async function analyzeCRM() {
+            const inputText = document.getElementById('crmInput').value.trim();
+            if (!inputText) {
+                alert("Por favor, cole um texto do CRM antes de analisar.");
+                return;
+            }
+
+            const btn = document.getElementById('btnAnalyze');
+            const loading = document.getElementById('aiLoading');
+            const emptyState = document.getElementById('aiEmptyState');
+            const results = document.getElementById('aiResults');
+
+            // UI changes for loading
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            loading.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            results.classList.add('hidden');
+
+            const systemPrompt = `Você é um especialista em Customer Success e Vendas B2B. O usuário fornecerá anotações de CRM. Sua tarefa é analisar o texto e retornar EXATAMENTE um objeto JSON válido, sem markdown, contendo:
+            {
+                "resumo": "Um resumo conciso de 2 a 3 frases sobre o que aconteceu na interação.",
+                "riscoChurn": "Alto", "Medio" ou "Baixo",
+                "motivoChurn": "Explicação objetiva do porquê do nível de risco avaliado.",
+                "upsell": "Quais oportunidades de vender novos produtos ou serviços foram identificadas ou podem ser sugeridas com base no texto."
+            }`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: inputText }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { 
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            resumo: { type: "STRING" },
+                            riscoChurn: { type: "STRING" },
+                            motivoChurn: { type: "STRING" },
+                            upsell: { type: "STRING" }
+                        }
+                    }
+                }
+            };
+
+            try {
+                const result = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawText) throw new Error("Resposta vazia da IA.");
+                
+                const data = JSON.parse(rawText);
+                populateAIResults(data);
+
+            } catch (error) {
+                console.error("Erro ao chamar IA:", error);
+                document.getElementById('aiEmptyState').innerHTML = `
+                    <i data-lucide="alert-circle" class="h-12 w-12 text-red-400 mb-2"></i>
+                    <p class="text-red-500 font-medium text-sm text-center">Erro ao processar a análise.<br>Verifique sua conexão ou tente novamente mais tarde.</p>
+                `;
+                lucide.createIcons();
+                emptyState.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+
+        function populateAIResults(data) {
+            document.getElementById('aiResumo').textContent = data.resumo || "Não foi possível gerar um resumo.";
+            document.getElementById('aiRiscoMotivo').textContent = data.motivoChurn || "Nenhuma observação detectada.";
+            document.getElementById('aiUpsell').textContent = data.upsell || "Nenhuma oportunidade clara identificada.";
+            
+            const risco = (data.riscoChurn || "Baixo").toLowerCase();
+            const badge = document.getElementById('aiRiscoNivel');
+            const card = document.getElementById('churnCard');
+            const titleColor = document.getElementById('churnTitleColor');
+            
+            badge.textContent = data.riscoChurn;
+            
+            // Reset classes
+            card.className = "p-4 rounded-lg border shadow-sm";
+            badge.className = "px-2 py-1 rounded text-xs font-black uppercase tracking-wider";
+            titleColor.className = "text-xs font-bold uppercase flex items-center gap-1";
+
+            if (risco.includes('alto')) {
+                card.classList.add('bg-red-50', 'border-red-200');
+                badge.classList.add('bg-red-600', 'text-white');
+                titleColor.classList.add('text-red-700');
+                document.getElementById('aiRiscoMotivo').classList.add('text-red-900');
+            } else if (risco.includes('médio') || risco.includes('medio')) {
+                card.classList.add('bg-amber-50', 'border-amber-200');
+                badge.classList.add('bg-amber-500', 'text-white');
+                titleColor.classList.add('text-amber-700');
+                document.getElementById('aiRiscoMotivo').classList.add('text-amber-900');
+            } else {
+                card.classList.add('bg-blue-50', 'border-blue-200');
+                badge.classList.add('bg-blue-500', 'text-white');
+                titleColor.classList.add('text-blue-700');
+                document.getElementById('aiRiscoMotivo').classList.add('text-blue-900');
+            }
+
+            document.getElementById('aiResults').classList.remove('hidden');
+        }
+
         // ==========================================
         // MOTORES MATEMÁTICOS E UTILS
         // ==========================================
@@ -431,11 +611,11 @@
         }
 
         // ==========================================
-        // LOGICA DE INTERFACE E GRÁFICOS
+        // LÓGICA DE INTERFACE E GRÁFICOS
         // ==========================================
 
         function switchTab(id) {
-            ['visao-geral', 'rotas', 'clientes', 'gideao'].forEach(t => {
+            ['visao-geral', 'rotas', 'clientes', 'ia'].forEach(t => {
                 const sec = document.getElementById(`sec-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
                 if (sec) sec.classList.add('hidden');
@@ -657,36 +837,6 @@
                 container.appendChild(btn);
             });
             lucide.createIcons();
-        }
-
-        // ==========================================
-        // GIDEÃO - Abertura Segura para o GitHub Pages
-        // ==========================================
-        function copiarEAbrirGemini() {
-            const txt = document.getElementById('crmInput').value.trim();
-            if(!txt) return;
-            
-            const prompt = `Atuas como Gideão, consultor estratégico de vendas automotivas B2B da G30.\nAnalisa os seguintes dados deste cliente extraídos do meu CRM. Identifica o perfil, avalia o MRR atual e gera uma sugestão tática de Upsell ou melhoria no processo de vendas para a nossa próxima reunião:\n\n${txt}`;
-            
-            // 1. Atualizar UI Imediatamente
-            document.getElementById('gideaoEmptyState').classList.add('hidden');
-            document.getElementById('gideaoResult').classList.remove('hidden');
-
-            // 2. Tentar copiar via API moderna
-            navigator.clipboard.writeText(prompt).then(() => {
-                // Sucesso
-            }).catch(err => {
-                console.error('Erro ao copiar para a área de transferência:', err);
-            });
-            
-            // 3. Abertura IMEDIATA da aba (forçada no mesmo momento do clique para furar bloqueadores de pop-up do GitHub Pages)
-            window.open('https://gemini.google.com/app', '_blank');
-        }
-
-        function resetGideao() {
-            document.getElementById('crmInput').value = '';
-            document.getElementById('gideaoResult').classList.add('hidden');
-            document.getElementById('gideaoEmptyState').classList.remove('hidden');
         }
 
         function openImageModal() {
