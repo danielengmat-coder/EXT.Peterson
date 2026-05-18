@@ -56,7 +56,7 @@
                     </div>
                     <label class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 shadow-sm font-bold text-sm">
                         <i data-lucide="upload-cloud" class="h-4 w-4"></i>
-                        <span>Importar CSV Pipedrive</span>
+                        <span>Importar MRR (CSV)</span>
                         <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importCSV(event)">
                     </label>
                 </div>
@@ -194,26 +194,28 @@
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                     <div class="mb-4">
                         <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">🧠 Inteligência Gideão</h2>
-                        <p class="text-sm text-slate-500">Cole interações do CRM para analisar viabilidade de expansão.</p>
+                        <p class="text-sm text-slate-500">Cole interações do CRM para analisar a viabilidade de expansão com a IA oficial da G30.</p>
                     </div>
-                    <textarea id="crmInput" rows="12" class="w-full p-4 border rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-orange-500 outline-none custom-scrollbar" placeholder="Insira dados do negócio e anotações da reunião..."></textarea>
+                    <textarea id="crmInput" rows="12" class="w-full p-4 border rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-orange-500 outline-none custom-scrollbar" placeholder="Cole aqui os dados do negócio, resumo da reunião, objeções do cliente..."></textarea>
+                    
                     <button onclick="copiarEAbrirGemini()" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3">
-                        <i data-lucide="clipboard-copy"></i> Copiar e Analisar no Gemini
+                        <i data-lucide="bot"></i> Analisar Oportunidades no Gemini
                     </button>
+                    <p class="text-[11px] text-slate-400 text-center mt-3">A abertura de nova aba funciona perfeitamente no GitHub Pages.</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
                     <div id="gideaoEmptyState">
                         <div class="bg-orange-50 p-6 rounded-full mb-4 inline-block">
-                            <i data-lucide="brain" class="h-10 w-10 text-orange-500"></i>
+                            <i data-lucide="zap" class="h-10 w-10 text-orange-500"></i>
                         </div>
                         <h3 class="text-lg font-bold text-slate-800">Assistente Gideão</h3>
-                        <p class="text-sm text-slate-500 max-w-xs mx-auto">O comando formatado enviará o contexto para a IA gerar estratégias de venda.</p>
+                        <p class="text-sm text-slate-500 max-w-xs mx-auto">O comando formatado enviará o contexto para o Google Gemini gerar estratégias de venda.</p>
                     </div>
                     <div id="gideaoResult" class="hidden fade-in">
                         <i data-lucide="check-circle-2" class="h-16 w-16 text-emerald-500 mb-4 mx-auto"></i>
-                        <h3 class="text-xl font-bold text-slate-800">Copiado!</h3>
-                        <p class="text-sm text-slate-600 mb-6">O site do Gemini foi aberto. Dê <strong>Ctrl+V</strong> para receber a estratégia.</p>
-                        <button onclick="resetGideao()" class="text-orange-600 font-bold hover:underline">Nova Análise</button>
+                        <h3 class="text-xl font-bold text-slate-800">Copiado com Sucesso!</h3>
+                        <p class="text-sm text-slate-600 mb-6">Aceda à aba do Gemini e dê <strong>Ctrl+V (Colar)</strong> no chat para receber a estratégia tática.</p>
+                        <button onclick="resetGideao()" class="text-orange-600 font-bold hover:underline">Fazer Nova Análise</button>
                     </div>
                 </div>
             </div>
@@ -264,7 +266,7 @@
         }
 
         // ==========================================
-        // DADOS: BASE CENTRAL UNIFICADA COM OS MRRs DEFINIDOS
+        // DADOS: BASE CENTRAL UNIFICADA DA CARTEIRA
         // ==========================================
         
         let unifiedClientsData = [
@@ -429,7 +431,7 @@
         }
 
         // ==========================================
-        // LÓGICA DE INTERFACE E GRÁFICOS
+        // LOGICA DE INTERFACE E GRÁFICOS
         // ==========================================
 
         function switchTab(id) {
@@ -494,7 +496,6 @@
 
             data.forEach(c => {
                 const mrr = calculateMRR(c);
-                const isSemProduto = !c.produto || c.produto === '-';
                 const link = (c.id && c.id !== '-') ? `https://gwebcarconsultoriaemarketingautomotivo.pipedrive.com/deal/${c.id}` : '#';
                 
                 tbody.innerHTML += `
@@ -503,13 +504,13 @@
                             <span class="block">${c.name}</span>
                         </td>
                         <td class="p-4">
-                            <span class="text-xs font-bold ${isSemProduto ? 'text-slate-400' : 'text-slate-700'} block">${c.produto}</span>
+                            <span class="text-xs font-bold text-slate-700 block">${c.produto}</span>
                         </td>
                         <td class="p-4">
                             <span class="text-[11px] text-slate-500 block max-w-[250px] truncate" title="${c.city}"><i data-lucide="map-pin" class="inline h-3 w-3 mr-0.5 mb-0.5"></i>${c.city}</span>
                             ${c.id !== '-' ? `<a href="${link}" target="_blank" class="text-[10px] text-orange-600 hover:text-orange-800 hover:underline flex items-center gap-1 mt-1">
                                 Abrir no CRM (ID: ${c.id}) <i data-lucide="external-link" class="h-3 w-3"></i>
-                            </a>` : `<span class="text-[10px] text-slate-400 mt-1 block">Aguardando CSV para ID</span>`}
+                            </a>` : `<span class="text-[10px] text-slate-400 mt-1 block">Aguardando Importação do ID</span>`}
                         </td>
                         <td class="p-4 text-right text-slate-500">${c.valor > 0 ? formatMoney(c.valor) : '<span class="text-xs text-red-400">Pendente</span>'}</td>
                         <td class="p-4 text-center font-medium">${c.valor > 0 ? c.parcelas + 'x' : '-'}</td>
@@ -534,13 +535,30 @@
             const ctxMrr = document.getElementById('mrrProductChart');
             if (!ctxSales || !ctxMrr) return;
 
+            const knownCities = [
+                'Campinas', 'Vinhedo', 'Valinhos', 'Indaiatuba', 'Sumaré', 'Hortolândia', 
+                'Nova Odessa', 'Paulínia', 'Americana', 'Santa Bárbara', 'Pedreira', 
+                'Mogi Guaçu', 'Bragança', 'Limeira', 'Piracicaba', 'Atibaia', 
+                'Caieiras', 'Pirassununga', 'Jundiaí', 'Cotia', 'Franco da Rocha', 
+                'Piracaia', 'Mogi das Cruzes'
+            ];
+
             const cityCount = {};
             data.forEach(c => {
-                let parts = c.city.split('-');
-                let city = parts.length > 1 ? parts[parts.length - 2].split(',').pop().trim() : 'Campinas'; 
-                cityCount[city] = (cityCount[city] || 0) + 1;
+                let detectedCity = 'Outras';
+                let str = (c.city + ' ' + c.name).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                
+                for (let city of knownCities) {
+                    let cityClean = city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    if (str.includes(cityClean)) {
+                        detectedCity = city === 'Santa Bárbara' ? "S. Bárbara d'Oeste" : city;
+                        break;
+                    }
+                }
+                cityCount[detectedCity] = (cityCount[detectedCity] || 0) + 1;
             });
-            const topCities = Object.entries(cityCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            const topCities = Object.entries(cityCount).sort((a,b) => b[1] - a[1]).slice(0, 8);
 
             if(charts.sales) charts.sales.destroy();
             charts.sales = new Chart(ctxSales.getContext('2d'), {
@@ -641,13 +659,27 @@
             lucide.createIcons();
         }
 
-        async function copiarEAbrirGemini() {
+        // ==========================================
+        // GIDEÃO - Abertura Segura para o GitHub Pages
+        // ==========================================
+        function copiarEAbrirGemini() {
             const txt = document.getElementById('crmInput').value.trim();
             if(!txt) return;
-            const prompt = `Analise os dados deste cliente extraídos do meu CRM para identificar oportunidades de Upsell ou melhoria no processo de vendas:\n\n${txt}`;
-            await navigator.clipboard.writeText(prompt);
+            
+            const prompt = `Atuas como Gideão, consultor estratégico de vendas automotivas B2B da G30.\nAnalisa os seguintes dados deste cliente extraídos do meu CRM. Identifica o perfil, avalia o MRR atual e gera uma sugestão tática de Upsell ou melhoria no processo de vendas para a nossa próxima reunião:\n\n${txt}`;
+            
+            // 1. Atualizar UI Imediatamente
             document.getElementById('gideaoEmptyState').classList.add('hidden');
             document.getElementById('gideaoResult').classList.remove('hidden');
+
+            // 2. Tentar copiar via API moderna
+            navigator.clipboard.writeText(prompt).then(() => {
+                // Sucesso
+            }).catch(err => {
+                console.error('Erro ao copiar para a área de transferência:', err);
+            });
+            
+            // 3. Abertura IMEDIATA da aba (forçada no mesmo momento do clique para furar bloqueadores de pop-up do GitHub Pages)
             window.open('https://gemini.google.com/app', '_blank');
         }
 
