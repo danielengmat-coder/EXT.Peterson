@@ -1,66 +1,79 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Consultor - Gestão de Rotas e Vendas</title>
+    <title>Painel Peterson - Gestão G30</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chosen Palette: Slate Neutrals with Orange-600 Accents -->
-    <!-- Application Structure Plan: SPA dashboard with 3 main sections: 'Visão Geral' (Macro sales data context via charts/KPIs), 'Roteiro de Visitas' (Micro task management showing the 7 specific Campinas routes), and 'Diretório' (Searchable database). This structure bridges the strategic data from the CSV with the tactical execution of the Markdown route plan, optimizing the consultant's workflow. -->
-    <!-- Visualization & Content Choices: Sales Trend -> Bar Chart (Chart.js) to compare monthly performance without SVG. Route Plan -> Interactive Grid/Cards updating a detail view to manage daily tasks. Client List -> Searchable Table for quick lookup. Icons -> Unicode to strictly adhere to NO SVG constraint. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; }
-        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
-        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .chart-container { position: relative; width: 100%; height: 300px; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .tab-active { border-bottom-width: 4px; border-color: #ea580c; color: #ea580c; font-weight: 600; }
         .tab-inactive { color: #64748b; font-weight: 500; }
-        .tab-inactive:hover { color: #334155; }
+        .tab-inactive:hover { color: #ea580c; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <!-- Image Modal -->
+    <!-- Modal Peterson -->
     <div id="imageModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300" onclick="closeImageModal()">
-        <div class="relative max-w-3xl max-h-[90vh] flex flex-col items-center">
-            <button class="absolute -top-10 right-0 text-white text-3xl hover:text-orange-400 focus:outline-none" onclick="closeImageModal()">&times;</button>
-            <img src="https://github.com/danielengmat-coder/EXT.Peterson/blob/119518ff0580b5e636ae31d59ac1311efd92907d/image.png?raw=true" alt="Peterson" class="max-w-full max-h-full rounded-2xl border-4 border-orange-500 shadow-2xl object-contain" onclick="event.stopPropagation()">
+        <div class="relative max-w-2xl">
+            <button class="absolute -top-10 right-0 text-white text-3xl hover:text-orange-500" onclick="closeImageModal()">&times;</button>
+            <img src="https://github.com/danielengmat-coder/EXT.Peterson/blob/119518ff0580b5e636ae31d59ac1311efd92907d/image.png?raw=true" alt="Peterson" class="rounded-xl border-4 border-orange-500 shadow-2xl">
         </div>
     </div>
 
-    <header class="bg-white shadow-sm sticky top-0 z-10">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10 border-b-2 border-orange-500">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center gap-3">
-                    <img src="https://github.com/danielengmat-coder/EXT.Peterson/blob/119518ff0580b5e636ae31d59ac1311efd92907d/image.png?raw=true" alt="Peterson" onclick="openImageModal()" class="w-10 h-10 rounded-full object-cover border-2 border-orange-500 shadow-sm cursor-pointer hover:opacity-80 transition-opacity" title="Ampliar imagem">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-4">
+                    <img src="https://github.com/danielengmat-coder/EXT.Peterson/blob/119518ff0580b5e636ae31d59ac1311efd92907d/image.png?raw=true" alt="Peterson" onclick="openImageModal()" class="w-12 h-12 rounded-full object-cover border-2 border-orange-500 cursor-pointer hover:scale-105 transition-transform shadow-md">
                     <div>
                         <h1 class="text-xl font-bold text-slate-800">Painel do Peterson</h1>
-                        <p class="text-xs text-slate-500">Consultoria Grande Campinas (RMC)</p>
+                        <p class="text-xs text-slate-500 font-medium">Gestão Tática • G30 Laranja</p>
                     </div>
                 </div>
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-semibold text-slate-700">Base: G30 (Vinhedo/SP)</p>
-                    <p class="text-xs text-slate-500">Atualizado: Abril 2026</p>
+                
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden md:block">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sincronização</p>
+                        <p id="syncStatus" class="text-sm font-bold text-emerald-600">Base Consolidada Ativa</p>
+                    </div>
+                    <label class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 shadow-sm font-bold text-sm">
+                        <i data-lucide="upload-cloud" class="h-4 w-4"></i>
+                        <span>Importar CSV Pipedrive</span>
+                        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importCSV(event)">
+                    </label>
                 </div>
             </div>
-            <nav class="flex space-x-8 mt-2 overflow-x-auto hide-scrollbar" aria-label="Tabs">
-                <button onclick="switchTab('visao-geral')" id="tab-visao-geral" class="tab-active pb-3 px-1 text-sm whitespace-nowrap">
-                    📈 Visão Geral
+
+            <nav class="flex space-x-8 overflow-x-auto hide-scrollbar">
+                <button onclick="switchTab('visao-geral')" id="tab-visao-geral" class="tab-active pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2">
+                    <i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard
                 </button>
-                <button onclick="switchTab('rotas')" id="tab-rotas" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap">
-                    🗺️ Planejamento de Rotas
+                <button onclick="switchTab('rotas')" id="tab-rotas" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2">
+                    <i data-lucide="map" class="h-4 w-4"></i> Rotas Estratégicas
                 </button>
-                <button onclick="switchTab('clientes')" id="tab-clientes" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap">
-                    📋 Diretório RMC
+                <button onclick="switchTab('clientes')" id="tab-clientes" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2">
+                    <i data-lucide="table" class="h-4 w-4"></i> Planilha Consolidada
                 </button>
-                <button onclick="switchTab('gideao')" id="tab-gideao" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap">
-                    🧠 Inteligência Gideão
-                </button>
-                <button onclick="switchTab('sp-estado')" id="tab-sp-estado" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap">
-                    🏢 Estado de São Paulo
+                <button onclick="switchTab('gideao')" id="tab-gideao" class="tab-inactive pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2">
+                    <i data-lucide="brain-circuit" class="h-4 w-4"></i> Inteligência Gideão
                 </button>
             </nav>
         </div>
@@ -68,814 +81,598 @@
 
     <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
-        <section id="sec-visao-geral" class="block">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Desempenho da Carteira</h2>
-                <p class="text-slate-600 text-sm max-w-3xl">Esta seção fornece um panorama estratégico das vendas dos clientes monitorados, agregando os dados de Janeiro a Março de 2026. Utilize estes insights macroeconômicos para direcionar as abordagens durante as visitas táticas.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                    <div class="text-slate-500 text-sm font-medium mb-1">Total de Lojas (RMC)</div>
-                    <div class="text-3xl font-bold text-slate-800">31</div>
-                    <div class="text-xs text-emerald-600 font-medium mt-2">↑ 100% Roteirizadas</div>
+        <!-- DASHBOARD -->
+        <section id="sec-visao-geral" class="block fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">Total de Lojas</p>
+                    <h3 class="text-3xl font-bold text-slate-800" id="kpiLojas">0</h3>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                    <div class="text-slate-500 text-sm font-medium mb-1">Volume de Vendas (Trimestre)</div>
-                    <div class="text-3xl font-bold text-slate-800">1.482</div>
-                    <div class="text-xs text-slate-500 font-medium mt-2">Veículos comercializados</div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">Faturação Bruta Estimada</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpiValorTotal">R$ 0,00</h3>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                    <div class="text-slate-500 text-sm font-medium mb-1">Média Mensal por Loja</div>
-                    <div class="text-3xl font-bold text-slate-800">16</div>
-                    <div class="text-xs text-orange-600 font-medium mt-2">Baseado no top 30 clientes</div>
+                <div class="bg-orange-600 p-6 rounded-xl shadow-md text-white">
+                    <p class="text-orange-100 text-xs font-bold uppercase mb-1">MRR Total</p>
+                    <h3 class="text-3xl font-black" id="kpiMrrTotal">R$ 0,00</h3>
                 </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                <h3 class="text-lg font-bold text-slate-800 mb-4">Evolução Mensal de Vendas (Amostra Carteira)</h3>
-                <div class="chart-container">
-                    <canvas id="salesChart"></canvas>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">Ticket Médio (MRR)</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpiTicketMedio">R$ 0,00</h3>
                 </div>
-                <p class="text-xs text-center text-slate-500 mt-4">Dados consolidados a partir da base de faturamento das lojas foco.</p>
-            </div>
-        </section>
-
-        <section id="sec-rotas" class="hidden">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Roteirização Otimizada - Grande Campinas</h2>
-                <p class="text-slate-600 text-sm max-w-3xl">Selecione uma rota para visualizar os detalhes logísticos. As 31 lojas foram agrupadas geograficamente em 7 rotas otimizadas a partir da Base G30 (Vinhedo) para minimizar o tempo de deslocamento em rodovias como Anhanguera, Bandeirantes e D. Pedro I.</p>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 space-y-3" id="route-list-container">
-                </div>
-
-                <div class="lg:col-span-2">
-                    <div id="route-detail-panel" class="bg-white rounded-xl shadow-sm p-6 border border-slate-100 min-h-[400px] flex flex-col">
-                        <div class="text-center text-slate-400 my-auto" id="route-empty-state">
-                            <div class="text-4xl mb-3">🗺️</div>
-                            <p>Selecione uma rota ao lado para ver os detalhes da visita.</p>
-                        </div>
-                        <div id="route-content" class="hidden">
-                            <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
-                                <div>
-                                    <h3 class="text-xl font-bold text-slate-800" id="detail-route-name">Nome da Rota</h3>
-                                    <p class="text-orange-600 text-sm font-medium mt-1" id="detail-route-focus">Foco da Rota</p>
-                                </div>
-                                <div class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold" id="detail-route-count">
-                                    0 Clientes
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-6" id="detail-route-stops">
-                            </div>
-
-                            <div class="mt-8 bg-amber-50 border border-amber-200 rounded-lg p-4" id="detail-route-warning">
-                                <h4 class="text-sm font-bold text-amber-800 mb-1">⚠️ Atenção Logística</h4>
-                                <p class="text-xs text-amber-700" id="detail-route-warning-text"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="sec-clientes" class="hidden">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Diretório de Clientes</h2>
-                <p class="text-slate-600 text-sm max-w-3xl">Consulte rapidamente a carteira de clientes ativos. Utilize a busca para filtrar por nome, localização ou ID do negócio. Esta ferramenta cruza os dados cadastrais com o histórico de faturamento recente.</p>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                    <div class="relative w-full max-w-md">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            🔍
-                        </span>
-                        <input type="text" id="searchInput" placeholder="Buscar por cliente, cidade ou ID..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
-                    </div>
-                    <div class="text-sm text-slate-500 hidden sm:block">
-                        Mostrando <span id="tableCount" class="font-bold text-slate-700">0</span> resultados
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                                <th class="p-4 font-semibold border-b border-slate-200">ID / Cliente</th>
-                                <th class="p-4 font-semibold border-b border-slate-200">Cidade (Base)</th>
-                                <th class="p-4 font-semibold border-b border-slate-200 text-right">Vendas (Jan)</th>
-                                <th class="p-4 font-semibold border-b border-slate-200 text-right">Vendas (Fev)</th>
-                                <th class="p-4 font-semibold border-b border-slate-200 text-right">Vendas (Mar)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="clientTableBody" class="divide-y divide-slate-100">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <section id="sec-gideao" class="hidden">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">🧠 Inteligência Gideão</h2>
-                <p class="text-slate-600 text-sm max-w-3xl">Cole os detalhes e histórico do cliente extraídos do CRM. O Gideão irá ler os dados, resumir a situação, separar o interesse por produtos e avaliar se é o momento ideal para oferecer um Upsell.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Coluna de Entrada -->
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100 flex flex-col h-full">
-                    
-                    <label for="crmInput" class="block text-sm font-semibold text-slate-700 mb-2">Dados do Cliente (CRM):</label>
-                    <textarea id="crmInput" rows="12" class="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm text-slate-700 flex-1 resize-none bg-slate-50" placeholder="Ex: Histórico de ligações, produtos já comprados, objeções do cliente, faturamento recente..."></textarea>
-                    
-                    <div id="gideaoError" class="hidden mt-2 text-red-500 text-xs font-semibold"></div>
-                    
-                    <button onclick="analisarClienteGideao()" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 shadow-sm">
-                        <span>Analisar com Gideão</span>
-                        <span class="text-lg">✨</span>
-                    </button>
+                <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm text-center">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-center gap-2"><i data-lucide="pie-chart" class="text-orange-500"></i> Mix de Produtos da Carteira</h3>
+                    <div class="chart-container">
+                        <canvas id="mrrProductChart"></canvas>
+                    </div>
                 </div>
-
-                <!-- Coluna de Saída (Resultados) -->
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-orange-200 relative min-h-[400px]">
-                    
-                    <!-- Estado Inicial -->
-                    <div id="gideaoEmptyState" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-6 text-center">
-                        <div class="text-5xl mb-4 opacity-50">🤖</div>
-                        <p class="font-medium text-slate-600">Aguardando dados...</p>
-                        <p class="text-sm mt-2">Cole as informações ao lado e clique em Analisar para obter os insights táticos.</p>
-                    </div>
-
-                    <!-- Estado Carregando -->
-                    <div id="gideaoLoading" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10 rounded-xl">
-                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-600 mb-4"></div>
-                        <p class="text-orange-800 font-bold animate-pulse">Gideão está analisando...</p>
-                    </div>
-
-                    <!-- Resultado da Análise -->
-                    <div id="gideaoResult" class="hidden h-full overflow-y-auto pr-2 custom-scrollbar">
-                        <h3 class="text-lg font-bold text-slate-800 border-b border-orange-100 pb-2 mb-4 flex items-center gap-2">
-                            <span>📋</span> Relatório Tático
-                        </h3>
-                        <div id="gideaoOutput" class="text-sm text-slate-700 space-y-4 whitespace-pre-wrap leading-relaxed"></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm text-center">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-center gap-2"><i data-lucide="bar-chart-3" class="text-orange-500"></i> Densidade Geográfica de Lojas</h3>
+                    <div class="chart-container">
+                        <canvas id="salesChart"></canvas>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="sec-sp-estado" class="hidden">
+        <!-- ROTAS -->
+        <section id="sec-rotas" class="hidden fade-in">
             <div class="mb-8">
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Carteira: Estado de São Paulo (SP)</h2>
-                <p class="text-slate-600 text-sm max-w-3xl">Listagem completa com os 120+ clientes ativos localizados em todas as regiões do Estado de São Paulo, fora do cinturão da RMC. Utilize o campo de busca para localizar por cidade ou razão social.</p>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Roteirização Otimizada (Peterson)</h2>
+                <p class="text-slate-600 text-sm max-w-3xl">Todas as lojas mapeadas estrategicamente. Clique numa rota para exibir as lojas da região.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 space-y-3" id="route-list-container"></div>
+                <div class="lg:col-span-2">
+                    <div id="route-detail-panel" class="bg-white rounded-xl shadow-sm p-8 border border-slate-200 min-h-[400px]">
+                        <div id="route-empty-state" class="text-center py-20 text-slate-400">
+                            <i data-lucide="map-pinned" class="h-16 w-16 mx-auto mb-4 opacity-20"></i>
+                            <p>Selecione uma rota estratégica para carregar o itinerário.</p>
+                        </div>
+                        <div id="route-content" class="hidden">
+                            <div class="flex justify-between items-center mb-8 border-b pb-4">
+                                <div>
+                                    <h3 class="text-2xl font-black text-slate-800 uppercase" id="detail-route-name"></h3>
+                                    <p class="text-orange-600 text-sm font-medium mt-1" id="detail-route-focus"></p>
+                                </div>
+                                <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold" id="detail-route-count"></span>
+                            </div>
+                            <div id="detail-route-stops" class="space-y-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PLANILHA CONSOLIDADA -->
+        <section id="sec-clientes" class="hidden fade-in">
+            <div class="mb-8 flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 mb-2">Planilha Consolidada da Carteira</h2>
+                    <p class="text-slate-600 text-sm max-w-3xl">Todos os MRRs foram estimados com a sua tabela. Importe o CSV para associar os IDs dos negócios do Pipedrive.</p>
+                </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="p-4 border-b border-slate-100 bg-orange-50 flex items-center justify-between">
-                    <div class="relative w-full max-w-md">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            🔍
-                        </span>
-                        <input type="text" id="searchSpInput" placeholder="Buscar cliente SP ou cidade..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
+                <div class="p-4 bg-slate-50 border-b flex flex-wrap gap-4 items-center">
+                    <div class="relative flex-1 min-w-[300px]">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4"></i>
+                        <input type="text" id="searchInput" placeholder="Pesquisar loja, cidade ou endereço..." class="w-full pl-10 pr-4 py-2 rounded-lg border focus:ring-2 focus:ring-orange-500 outline-none text-sm">
                     </div>
-                    <div class="text-sm text-orange-800 hidden sm:block">
-                        <span id="spTableCount" class="font-bold text-orange-600 text-lg">0</span> Lojas em SP
+                    <select id="productFilter" class="px-4 py-2 rounded-lg border text-sm bg-white outline-none focus:ring-2 focus:ring-orange-500">
+                        <option value="all">Todos os Produtos</option>
+                    </select>
+                    <div class="text-sm text-slate-500 whitespace-nowrap bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                        <span id="tableCount" class="font-bold text-slate-800">0</span> resultados
                     </div>
                 </div>
-                <div class="overflow-x-auto h-[600px] overflow-y-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse relative">
-                        <thead class="sticky top-0 bg-white shadow-sm z-10">
-                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                                <th class="p-4 font-semibold border-b border-slate-200">ID / Cliente (São Paulo)</th>
-                                <th class="p-4 font-semibold border-b border-slate-200">Cidade Extrato</th>
-                                <th class="p-4 font-semibold border-b border-slate-200 text-right">Vendas (Jan)</th>
-                                <th class="p-4 font-semibold border-b border-slate-200 text-right">Vendas (Fev)</th>
-                                <th class="p-4 font-semibold border-b border-slate-200 text-right">Vendas (Mar)</th>
+                <div class="overflow-x-auto h-[600px] custom-scrollbar">
+                    <table class="w-full text-left">
+                        <thead class="sticky top-0 bg-slate-100 text-slate-500 text-xs uppercase font-bold">
+                            <tr>
+                                <th class="p-4">Loja / Proprietário</th>
+                                <th class="p-4">Produto</th>
+                                <th class="p-4">Endereço Registado</th>
+                                <th class="p-4 text-right">Valor Contrato</th>
+                                <th class="p-4 text-center">Parcelas</th>
+                                <th class="p-4 text-right text-orange-600">MRR Mensal</th>
                             </tr>
                         </thead>
-                        <tbody id="spTableBody" class="divide-y divide-slate-100">
-                        </tbody>
+                        <tbody id="clientTableBody" class="divide-y divide-slate-100"></tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- GIDEÃO -->
+        <section id="sec-gideao" class="hidden fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="mb-4">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">🧠 Inteligência Gideão</h2>
+                        <p class="text-sm text-slate-500">Cole interações do CRM para analisar viabilidade de expansão.</p>
+                    </div>
+                    <textarea id="crmInput" rows="12" class="w-full p-4 border rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-orange-500 outline-none custom-scrollbar" placeholder="Insira dados do negócio e anotações da reunião..."></textarea>
+                    <button onclick="copiarEAbrirGemini()" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3">
+                        <i data-lucide="clipboard-copy"></i> Copiar e Analisar no Gemini
+                    </button>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+                    <div id="gideaoEmptyState">
+                        <div class="bg-orange-50 p-6 rounded-full mb-4 inline-block">
+                            <i data-lucide="brain" class="h-10 w-10 text-orange-500"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">Assistente Gideão</h3>
+                        <p class="text-sm text-slate-500 max-w-xs mx-auto">O comando formatado enviará o contexto para a IA gerar estratégias de venda.</p>
+                    </div>
+                    <div id="gideaoResult" class="hidden fade-in">
+                        <i data-lucide="check-circle-2" class="h-16 w-16 text-emerald-500 mb-4 mx-auto"></i>
+                        <h3 class="text-xl font-bold text-slate-800">Copiado!</h3>
+                        <p class="text-sm text-slate-600 mb-6">O site do Gemini foi aberto. Dê <strong>Ctrl+V</strong> para receber a estratégia.</p>
+                        <button onclick="resetGideao()" class="text-orange-600 font-bold hover:underline">Nova Análise</button>
+                    </div>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-sm mt-auto">
-        <p>Desenvolvido para Gestão Tática e Inteligência de Negócios. Base G30.</p>
-    </footer>
-
     <script>
-        const routeData = [
-            {
-                id: 'r1',
-                name: 'ROTA 1: Eixo Satélites Sul',
-                focus: 'Vinhedo, Valinhos e Indaiatuba. Cidades adjacentes à Base G30.',
-                warning: 'Sempre confirme com Daniel para avaliação da loja e como está o funcionamento da mesma assim como uma perspectiva financeira.',
-                stops: [
-                    { id: '45384', client: 'Daniel | Exchange Motors', address: 'Avenida Salvador Rotella, 488 - Jd. Flora, Vinhedo', dist: '~3 km da Base G30' },
-                    { id: '38305', client: 'Destaque Valinhos Comercio de Veiculos', address: 'R. Treze de Maio, 650 - Vila Olivo, Valinhos', dist: '~8 km de Exchange Motors' },
-                    { id: '43331', client: 'C14 COMERCIO DE VEICULOS', address: 'Rua Pernambuco, 22 - Vila D\'agostinho, Valinhos', dist: '~3 km de Destaque Valinhos' },
-                    { id: '45233', client: 'R&O MOTORS', address: 'Avenida Gessy Lever, 651 - Lenheiro, Valinhos', dist: '~1,5 km de C14 Comercio' },
-                    { id: '46566', client: 'João Vitor | Unique Automoveis', address: 'Av. Visconde de Indaiatuba, 929 - Centro, Indaiatuba', dist: '~22 km de R&O Motors' }
-                ]
+        // ==========================================
+        // MOTORES MATEMÁTICOS E UTILS
+        // ==========================================
+        
+        function formatMoney(value) {
+            if (value === null || value === undefined || isNaN(value)) return 'R$ 0,00';
+            return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function parseVal(v) {
+            if (!v) return 0;
+            if (typeof v === 'number') return v;
+            let s = String(v).replace(/[^\d,.-]/g, '');
+            if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+            else if (s.includes(',')) s = s.replace(',', '.');
+            return parseFloat(s) || 0;
+        }
+
+        function parseParc(v) {
+            if (!v) return 1;
+            let n = parseInt(String(v).replace(/\D/g, ''));
+            return (n > 0) ? n : 1;
+        }
+
+        const calculateMRR = (client) => {
+            if (!client.valor || client.valor === 0) return 0;
+            return client.valor / client.parcelas;
+        };
+
+        const cleanKey = (key) => String(key).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+
+        function findColumnValue(row, keywords) {
+            for (let key in row) {
+                let k = cleanKey(key);
+                for (let word of keywords) {
+                    if (k.includes(word)) return row[key];
+                }
+            }
+            return null;
+        }
+
+        // ==========================================
+        // DADOS: BASE CENTRAL UNIFICADA COM OS MRRs DEFINIDOS
+        // ==========================================
+        
+        let unifiedClientsData = [
+            { id: '-', name: 'Mavi Veículos Ltda. (Marcos Perazza)', city: 'Av. Lourides Dell Porto, 51 - Centro, Caieiras - SP', produto: 'Lions Car Club / Carchat', valor: 24379.92, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Evidence Motors Eireli (Frederico Conci)', city: 'Av. Rio das Pedras, 428 - Piracicamirim, Piracicaba - SP', produto: 'Lions Car Club', valor: 3915.48, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'ITTMotors (Ronaldo dos Santos Pereira)', city: 'Rua Joao Pires 405 Centro Atibaia SP', produto: 'Lions Car Club', valor: 18564.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Lago Automóveis Ltda. (Ronaldo Lago)', city: 'Av. Antônio Joaquim Mendes, 766 Centro, Pirassununga - SP', produto: 'Lions Car Club', valor: 19164.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Lago Automóveis (Segunda unidade)', city: 'Avenida Painguas 1849 Vila Guimaraes Pirassununga SP', produto: 'Carchat', valor: 0, parcelas: 1, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Leonardo Martini', city: 'Rua Arthur Germano Fher, 16 - Vila Angelica, Jundiaí - SP', produto: 'Lions Car Club', valor: 0, parcelas: 1, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Kingvel Multimarcas (Diego Maranho)', city: 'Rua Emile Pilon 211/221 - Vila Arens II - Jundiai', produto: 'Programa G30', valor: 11964.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Karmann Automóveis (Gabriel)', city: 'Avenida Francisco José de Camargo Andrade, 177, Campinas - SP', produto: 'Lions Car Club / Carchat', valor: 0, parcelas: 1, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Personalitte (Thiago Diogo)', city: 'Rua Domício Pachêco e Silva, 1024 - Jardim Novo Campos Eliseos, Campinas - SP', produto: 'Lions Car Club / Carchat', valor: 48000.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Marcon Veículos (Eduardo)', city: 'Rua daibes bellix, 150 - Jd São Jorge - Pedreira SP', produto: 'Programa G30', valor: 17964.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Alvorada Automóveis (Leandro Freitas Calheiros)', city: 'Avenida Carlos Botelho 1239 Jardim Santa Rosa Nova Odessa SP', produto: 'Lions Car Club / Carchat', valor: 20151.96, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Alexandre Automóveis (Léo)', city: 'Rua Dirce Fiorellini Badari, 235 - Centro, Piracaia-SP', produto: 'Programa G30', valor: 11964.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Unimais (Fabio Novo)', city: 'Avenida das Amoreiras, 3247 - Jardim Novo Campos Eliseos, Campinas - SP', produto: 'Lions Car Club', valor: 24000.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Martini Veículos (Carlos)', city: 'Rua Dona Idalina, 113 - Paulicéia, Piracicaba - SP', produto: 'Programa G30', valor: 27500.00, parcelas: 11, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'MP Auto (Victor Hugo)', city: 'Avenida Professor Manoel Jose Pedroso 1016 Parque Bahia Cotia SP', produto: 'Lions Car Club / Carchat', valor: 10764.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'MM Autocar (Rodrigo Molon)', city: 'Rodovia Jan Antonim Bata, 450 - Jardim Santos Reis, Piracaia - SP', produto: 'Programa G30 / Carchat / Lions Car Club', valor: 39999.96, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Da Cunha Multimarcas (Elton)', city: 'Avenida Carminé Feola, 476 - Vila Rio Branco, Americana - SP', produto: 'Programa G30 / Carchat', valor: 20004.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Jesner Motors (Aline Telles)', city: 'Av São Paulo, 819 - Jardim dona Regina, Santa Bárbara d\'Oeste - SP', produto: 'Programa G30', valor: 20004.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Abreu Motors (Thales Alexandre)', city: 'Avenida Dois Córregos, 153 - Piracicamirim, Piracicaba - SP', produto: 'Programa G30', valor: 20004.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Forza Motors / Brasil 500 (Adilson Costa)', city: 'Rua Antonio Oversio Ferreira, 49, Parque Brasil 500, Paulínia - SP', produto: 'Programa G30 / Carchat', valor: 26004.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Renova Multimarcas (Reginaldo Felicio / Lilian)', city: 'Avenida Sao Paulo 1627 Cidade Nova II Santa Bárbara D\'Oeste SP', produto: 'Programa G30 / Carchat', valor: 40008.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Lexus Motors (Roberto Amadio)', city: 'Av. Dr. Fabricio Vampre, 773, Jd. Nova Italia - Limeira/SP', produto: 'Programa G30 / Carchat', valor: 40008.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Correa Veículos (Marcio)', city: 'Rua da Glória, 2288 - Paulista, Piracicaba - SP', produto: 'Programa G30 / Carchat', valor: 42000.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'EloMix Multimarcas (Edson Castanha)', city: 'R. Apolo, 313 - Vila Josefina, Franco da Rocha - SP', produto: 'Programa G30', valor: 21000.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'D\'Black Motors e Kainni Veículos (Samanta)', city: 'Rua Suíça - Jardim Cica, Jundiaí - SP', produto: 'Programa G30', valor: 21000.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'RNC Veículos (Wanderson Nunues e Alexina)', city: 'Avenida Dona Gertrudes, 232 - Alvinópolis, Atibaia - SP', produto: 'Programa G30 / Carchat', valor: 16966.92, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Junnior Veículos (Junior Alaercio)', city: 'R. José Alvarenga 286 - Jardim Progresso, Mogi Guaçu - SP', produto: 'Programa G30 / Carchat', valor: 0, parcelas: 1, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Garage 4 Motors (Jhonny Escolastica)', city: 'Avenida Ana Beatriz Bierrembach, 901 - Vila Mimosa, Campinas - SP', produto: 'Programa G30 / Carchat', valor: 38400.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Exchange Motors (Daniel)', city: 'Avenida Salvador Rotella, 488, Jd. Flora, Vinhedo SP', produto: 'Programa G30 / Carchat', valor: 35928.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'RGM Motos (Robert Gledson)', city: 'Rua Doutor Freitas 819 Matadouro Bragança Paulista SP', produto: 'Programa G30 / Carchat', valor: 35928.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Unique Automoveis (João Vitor Lourenço Gomes)', city: 'Visconde de Indaiatuba, 929 - Centro, Indaiatuba - SP', produto: 'Programa G30', valor: 12000.00, parcelas: 4, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Assis Multimarcas (José)', city: 'Avenida Campinas, 1617 - Vila Cidade Jardim, Limeira - SP', produto: 'Programa G30 / Carchat', valor: 17964.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'R-Nan Motors (Renan)', city: 'Rua Armindo Tank, 99 - Vila Anita, Limeira - SP', produto: 'Programa G30', valor: 11964.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Gui Automóveis (Guilherme Hissashi)', city: 'Avenida Presidente Getulio Vargas 657 Mogi Moderno Mogi das Cruzes SP', produto: 'Lions Car Club', valor: 10967.00, parcelas: 11, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Rozze Veículos (Rose Rodrigues)', city: 'Avenida Francisco de Paula Leite 870 Jardim Nely Indaiatuba SP', produto: 'Programa G30 / Carchat', valor: 17964.00, parcelas: 12, m1:0, m2:0, m3:0 },
+            { id: '-', name: 'Autostock Intermediações de Veículos (Cássia Mota)', city: 'Avenida Juscelino Kubitschek de Oliveira 1574, Bloco Salão Industrial - Distrito Industrial, Santa Bárbara D\'Oeste SP', produto: 'Programa G30 / Carchat', valor: 17964.00, parcelas: 12, m1:0, m2:0, m3:0 }
+        ];
+
+        let charts = { sales: null, mrr: null };
+
+        // ==========================================
+        // ROTAS ESTRATÉGICAS
+        // ==========================================
+        const strategicRoutes = [
+            { 
+                id: 'r1', name: '1. Eixo Jundiaí, Vinhedo & Indaiatuba', focus: 'Margeando a Via Anhanguera', 
+                stores: [
+                    { id: '-', client: 'Exchange Motors', address: 'Avenida Salvador Rotella, 488 - Vinhedo' },
+                    { id: '-', client: 'Rozze Veículos', address: 'Avenida Francisco de Paula Leite, 870 - Indaiatuba' },
+                    { id: '-', client: 'Unique Automoveis', address: 'Visconde de Indaiatuba, 929 - Indaiatuba' },
+                    { id: '-', client: 'Leonardo Martini', address: 'Rua Arthur Germano Fher, 16 - Jundiaí' },
+                    { id: '-', client: 'Kingvel Multimarcas', address: 'Rua Emile Pilon 211/221 - Jundiaí' },
+                    { id: '-', client: 'D\'Black Motors e Kainni Veículos', address: 'Rua Suíça - Jardim Cica, Jundiaí' }
+                ] 
             },
-            {
-                id: 'r2',
-                name: 'ROTA 2: Campinas Sul',
-                focus: 'Amoreiras, Pompéia e Mimosa. Agrupamento vizinho de porta.',
-                warning: 'Sempre confirme com Daniel para avaliação da loja e perspectiva financeira. Aproveite para fazer as visitas a pé na Vila Pompeia.',
-                stops: [
-                    { id: '44902', client: 'Jhonny | Garage 4 Motors', address: 'Av Ana Beatriz Bierrembach, 901 - Vila Mimosa, Campinas', dist: '~18 km da Base G30' },
-                    { id: '45385', client: 'Exclusive Multimarcas', address: 'Av. Mirandópolis, 268 - Vila Pompeia, Campinas', dist: '~2 km de Garage 4 Motors' },
-                    { id: '36816', client: 'R7 Motors', address: 'Av. Mirandópolis, 236 - Vila Pompeia, Campinas', dist: '~50 metros de Exclusive (A pé)' },
-                    { id: '25035', client: 'BLUE COMERCIO DE VEICULOS', address: 'Av. das Amoreiras, 3247 - Campinas', dist: '~1,5 km de R7 Motors' },
-                    { id: '25501', client: 'Unimais veículos', address: 'Av. das Amoreiras, 3247 - Campinas', dist: 'Mesmo endereço da BLUE' }
-                ]
+            { 
+                id: 'r2', name: '2. Campinas & Região (Central)', focus: 'Concentração RMC', 
+                stores: [
+                    { id: '-', client: 'Karmann Automóveis', address: 'Av. Francisco José Camargo Andrade, 177 - Campinas' },
+                    { id: '-', client: 'Personalitte', address: 'Rua Domício Pachêco e Silva, 1024 - Campinas' },
+                    { id: '-', client: 'Unimais', address: 'Avenida das Amoreiras, 3247 - Campinas' },
+                    { id: '-', client: 'Garage 4 Motors', address: 'Avenida Ana Beatriz Bierrembach, 901 - Campinas' },
+                    { id: '-', client: 'Forza Motors / Brasil 500', address: 'Rua Antonio Oversio Ferreira, 49 - Paulínia' }
+                ] 
             },
-            {
-                id: 'r3',
-                name: 'ROTA 3: Campinas Oeste + Hortolândia',
-                focus: 'Campos Elíseos e Pauliceia. Conexão direta com Hortolândia via SP-101.',
-                warning: 'Evitar deslocamento via SP-101 próximo das 17h30 devido ao alto fluxo de retorno.',
-                stops: [
-                    { id: '44012', client: 'DP Veículos', address: 'Rua Silvio Rizzardo, 1530 - Jardim Pauliceia, Campinas', dist: '~22 km da Base G30' },
-                    { id: '19114', client: 'Personalitte', address: 'Rua Domício Pachêco e Silva, 1024 - Campinas', dist: '~3 km de DP Veículos' },
-                    { id: '33438', client: 'Auto Classe Multimarcas', address: 'Rua Domício Pachêco e Silva, 1159 - Campinas', dist: '~150 metros de Personalitte' },
-                    { id: '38237', client: 'D Motos D.V. da Silva', address: 'Avenida Santana, 1711 - Jardim Amanda I, Hortolândia', dist: '~6 km de Auto Classe' }
-                ]
+            { 
+                id: 'r3', name: '3. Americana, Nova Odessa & SBO', focus: 'Corredor SP-304', 
+                stores: [
+                    { id: '-', client: 'Alvorada Automóveis', address: 'Avenida Carlos Botelho 1239 - Nova Odessa' },
+                    { id: '-', client: 'Da Cunha Multimarcas', address: 'Avenida Carminé Feola, 476 - Americana' },
+                    { id: '-', client: 'Jesner Motors', address: 'Av São Paulo, 819 - Santa Bárbara d\'Oeste' },
+                    { id: '-', client: 'Renova Multimarcas', address: 'Avenida Sao Paulo 1627 - Santa Bárbara D\'Oeste' },
+                    { id: '-', client: 'Autostock Intermediações', address: 'Av. Juscelino Kubitschek 1574 - SBO' }
+                ] 
             },
-            {
-                id: 'r4',
-                name: 'ROTA 4: Campinas Centro & Geral',
-                focus: 'Cortar região central e adjacências.',
-                warning: 'ATENÇÃO CRÍTICA: Contatar Azevedo, ALGIS, JSA e Escritório via WhatsApp de manhã cedo para coletar localização exata. Endereços ausentes no CRM.',
-                stops: [
-                    { id: '46633', client: 'M3 MOTORS', address: 'Av Engenheiro Cyro Lustosa - Vila Joaquim Inácio, Campinas', dist: '~15 km da Base G30' },
-                    { id: '19008', client: 'Karmann Automoveis', address: 'Av. Francisco J. de Camargo Andrade, 177 - Chapadão', dist: '~8 km de M3 Motors' },
-                    { id: '45491', client: 'Azevedo Veiculos', address: 'A CONFIRMAR VIA WHATSAPP', dist: 'A definir' },
-                    { id: '45511', client: 'ALGIS MOTORS', address: 'A CONFIRMAR VIA WHATSAPP', dist: 'A definir' },
-                    { id: '45518', client: 'JSA Motors', address: 'A CONFIRMAR VIA WHATSAPP', dist: 'A definir' },
-                    { id: '45519', client: 'Escritório do Automóvel', address: 'A CONFIRMAR VIA WHATSAPP', dist: 'A definir' }
-                ]
+            { 
+                id: 'r4', name: '4. Piracicaba & Limeira', focus: 'Expansão Noroeste', 
+                stores: [
+                    { id: '-', client: 'Evidence Motors Eireli', address: 'Av. Rio das Pedras, 428 - Piracicaba' },
+                    { id: '-', client: 'Martini Veículos', address: 'Rua Dona Idalina, 113 - Piracicaba' },
+                    { id: '-', client: 'Abreu Motors', address: 'Avenida Dois Córregos, 153 - Piracicaba' },
+                    { id: '-', client: 'Correa Veículos', address: 'Rua da Glória, 2288 - Piracicaba' },
+                    { id: '-', client: 'Lexus Motors', address: 'Av. Dr. Fabricio Vampre, 773 - Limeira' },
+                    { id: '-', client: 'Assis Multimarcas', address: 'Avenida Campinas, 1617 - Limeira' },
+                    { id: '-', client: 'R-Nan Motors', address: 'Rua Armindo Tank, 99 - Limeira' }
+                ] 
             },
-            {
-                id: 'r5',
-                name: 'ROTA 5: Eixo Anhanguera',
-                focus: 'Sumaré, Nova Odessa e Paulínia. Cinturão da Rod. Anhanguera.',
-                warning: 'Sempre confirme com Daniel para avaliação da loja e perspectiva financeira.',
-                stops: [
-                    { id: '24332', client: 'Automax Sumaré', address: 'Rua Vicente Rodrigues, 300 - Jd. Bom Retiro, Sumaré', dist: '~28 km da Base G30' },
-                    { id: '24267', client: 'Alvorada Automóveis', address: 'Avenida Carlos Botelho, 1239 - Nova Odessa', dist: '~10 km de Automax' },
-                    { id: '49016', client: 'GIUSTI & GIUSTI', address: 'Avenida Carlos Botelho, 1239 - Nova Odessa', dist: 'Mesmo endereço de Alvorada' },
-                    { id: '38511', client: 'Forza Motors', address: 'Rua Antonio Oversio Ferreira, 49 - Paulínia', dist: '~16 km de GIUSTI' }
-                ]
+            { 
+                id: 'r5', name: '5. Bragança, Atibaia & Piracaia', focus: 'Expansão Nordeste (Rod. D. Pedro)', 
+                stores: [
+                    { id: '-', client: 'ITTMotors', address: 'Rua Joao Pires 405 - Atibaia' },
+                    { id: '-', client: 'RNC Veículos', address: 'Avenida Dona Gertrudes, 232 - Atibaia' },
+                    { id: '-', client: 'RGM Motos', address: 'Rua Doutor Freitas 819 - Bragança Paulista' },
+                    { id: '-', client: 'Alexandre Automóveis', address: 'Rua Dirce Fiorellini Badari, 235 - Piracaia' },
+                    { id: '-', client: 'MM Autocar', address: 'Rodovia Jan Antonim Bata, 450 - Piracaia' }
+                ] 
             },
-            {
-                id: 'r6',
-                name: 'ROTA 6: Eixo SP-304',
-                focus: 'Americana e Santa Bárbara d\'Oeste.',
-                warning: 'Sempre confirme com Daniel para avaliação da loja e perspectiva financeira.',
-                stops: [
-                    { id: '35933', client: 'César Automóveis', address: 'Av. Carminé Feola, 503 - Jd. Sao Domingos, Americana', dist: '~40 km da Base G30' },
-                    { id: '38196', client: 'Da Cunha Multimarcas', address: 'Avenida Carminé Feola - Americana', dist: '~1 km de César' },
-                    { id: '39879', client: 'Jetor Veículos', address: 'Av. Da Saudade, 367 - Vila Cordenonsi, Americana', dist: '~4 km de Da Cunha' },
-                    { id: '44423', client: 'AUTO DREAM', address: 'Rua Igaratá - Jardim Ipiranga, Americana', dist: '~6 km de Jetor' },
-                    { id: '38200', client: 'Jesner Motors', address: 'Av. São Paulo, 819 - Jd. Dona Regina, S. Bárbara', dist: '~3 km de AUTO DREAM' },
-                    { id: '38527', client: 'Renova Multimarcas', address: 'Avenida Sao Paulo, 1627 - S. Bárbara', dist: '~1 km de Jesner' }
-                ]
-            },
-            {
-                id: 'r7',
-                name: 'ROTA 7: Circuito das Águas',
-                focus: 'Pedreira. Prospecção livre ao longo do trajeto.',
-                warning: 'Dia desenhado para prospecção fria. Pare em revendas ao longo da Rod. Gov. Adhemar de Barros.',
-                stops: [
-                    { id: '23596', client: 'Eduardo I Marcon Veículos', address: 'Rua Daibes Bellix, 150 - Jd. São Jorge, Pedreira', dist: '~45 km da Base G30' }
-                ]
+            { 
+                id: 'r6', name: '6. Expansão Diversa & Leste', focus: 'Mogi Guaçu, Mogi das Cruzes e Cidades Mapeadas', 
+                stores: [
+                    { id: '-', client: 'Mavi Veículos Ltda.', address: 'Av. Lourides Dell Porto, 51 - Caieiras' },
+                    { id: '-', client: 'EloMix Multimarcas', address: 'R. Apolo, 313 - Franco da Rocha' },
+                    { id: '-', client: 'MP Auto', address: 'Avenida Professor Manoel Jose Pedroso 1016 - Cotia' },
+                    { id: '-', client: 'Junnior Veículos', address: 'R. José Alvarenga 286 - Mogi Guaçu' },
+                    { id: '-', client: 'Lago Automóveis Ltda.', address: 'Av. Antônio Joaquim Mendes, 766 - Pirassununga' },
+                    { id: '-', client: 'Lago Automóveis (Segunda unidade)', address: 'Avenida Painguas 1849 - Pirassununga' },
+                    { id: '-', client: 'Marcon Veículos', address: 'Rua daibes bellix, 150 - Pedreira' },
+                    { id: '-', client: 'Gui Automóveis', address: 'Avenida Presidente Getulio Vargas 657 - Mogi das Cruzes' }
+                ] 
             }
         ];
 
-        const clientsData = [
-            { id: '19008', name: 'Karmann Automoveis', city: 'Campinas', m1: 15, m2: 20, m3: 18 },
-            { id: '19114', name: 'Personalitte', city: 'Campinas', m1: 16, m2: 15, m3: 17 },
-            { id: '25035', name: 'BLUE COMERCIO', city: 'Campinas', m1: 212, m2: 229, m3: 220 },
-            { id: '25501', name: 'Unimais veículos', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '33438', name: 'Auto Classe Multimarcas', city: 'Campinas', m1: 12, m2: 14, m3: 15 },
-            { id: '36816', name: 'R7 Motors', city: 'Campinas', m1: 25, m2: 22, m3: 24 },
-            { id: '44012', name: 'DP Veículos', city: 'Campinas', m1: 18, m2: 19, m3: 20 },
-            { id: '44902', name: 'Garage 4 Motors', city: 'Campinas', m1: 15, m2: 28, m3: 25 },
-            { id: '45385', name: 'Exclusive Multimarcas', city: 'Campinas', m1: 10, m2: 12, m3: 14 },
-            { id: '45491', name: 'Azevedo Veiculos', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '45511', name: 'ALGIS MOTORS', city: 'Campinas', m1: 8, m2: 9, m3: 11 },
-            { id: '45518', name: 'JSA Motors', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '45519', name: 'Escritório do Automóvel', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '46633', name: 'M3 MOTORS', city: 'Campinas', m1: 22, m2: 25, m3: 26 },
-            { id: '45384', name: 'Exchange Motors', city: 'Vinhedo', m1: 8, m2: 14, m3: 13 },
-            { id: '38305', name: 'Destaque Valinhos', city: 'Valinhos', m1: 14, m2: 16, m3: 18 },
-            { id: '43331', name: 'C14 COMERCIO', city: 'Valinhos', m1: 9, m2: 11, m3: 12 },
-            { id: '45233', name: 'R&O MOTORS', city: 'Valinhos', m1: 11, m2: 13, m3: 15 },
-            { id: '46566', name: 'Unique Automoveis', city: 'Indaiatuba', m1: 40, m2: 45, m3: 42 },
-            { id: '24332', name: 'Automax Sumaré', city: 'Sumaré', m1: 27, m2: 32, m3: 30 },
-            { id: '38237', name: 'D Motos D.V. da Silva', city: 'Hortolândia', m1: 5, m2: 6, m3: 7 },
-            { id: '24267', name: 'Alvorada Automóveis', city: 'Nova Odessa', m1: 21, m2: 26, m3: 25 },
-            { id: '49016', name: 'GIUSTI & GIUSTI', city: 'Nova Odessa', m1: 19, m2: 20, m3: 21 },
-            { id: '38511', name: 'Forza Motors', city: 'Paulínia', m1: 6, m2: 8, m3: 9 },
-            { id: '35933', name: 'César Automóveis', city: 'Americana', m1: 14, m2: 15, m3: 16 },
-            { id: '38196', name: 'Da Cunha Multimarcas', city: 'Americana', m1: 7, m2: 4, m3: 8 },
-            { id: '39879', name: 'Jetor Veículos', city: 'Americana', m1: 11, m2: 13, m3: 14 },
-            { id: '44423', name: 'AUTO DREAM', city: 'Americana', m1: 16, m2: 18, m3: 19 },
-            { id: '38200', name: 'Jesner Motors', city: 'Santa Bárbara d\'Oeste', m1: 8, m2: 10, m3: 10 },
-            { id: '38527', name: 'Renova Multimarcas', city: 'Santa Bárbara d\'Oeste', m1: 25, m2: 28, m3: 30 },
-            { id: '23596', name: 'Marcon Veículos', city: 'Pedreira', m1: 15, m2: 15, m3: 17 }
-        ];
+        // ==========================================
+        // IMPORTAÇÃO DE CSV (ATUALIZA O ID E OS DADOS)
+        // ==========================================
 
-        const spClientsData = [
-            { id: '11214', name: 'Fabio Pontoglio Cristovão | Smart carros', city: 'Ribeirão Preto', m1: 6, m2: 8, m3: null },
-            { id: '11618', name: 'Marcos Perazza - Mavi Veiculos', city: 'Caieiras', m1: 28, m2: 26, m3: 28 },
-            { id: '11759', name: 'FREDERICO CONCI - EVIDENCE MOTORS', city: 'Piracicaba', m1: null, m2: null, m3: null },
-            { id: '11796', name: 'RONALDO DOS SANTOS - ITTMOTORS', city: 'Atibaia', m1: 25, m2: 22, m3: 15 },
-            { id: '11802', name: 'RONALDO LAGO - LAGO AUTOMOVEIS', city: 'Pirassununga', m1: null, m2: null, m3: null },
-            { id: '11809', name: 'ADILSON PESSOA - SICCS CARS', city: 'Cotia', m1: 59, m2: 38, m3: 43 },
-            { id: '11988', name: 'Renato Breschi - BRESCHI MULTIMARCAS', city: 'S. B. do Campo', m1: null, m2: null, m3: null },
-            { id: '16629', name: 'LAGO AUTOMOVEIS', city: 'Pirassununga', m1: null, m2: null, m3: null },
-            { id: '17449', name: 'Sergio Shimomoto - BOX 215', city: 'Guarulhos', m1: null, m2: null, m3: 24 },
-            { id: '17982', name: 'Jefferson Faria | Faria Multimarcas', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '18772', name: 'Diego Maranho | Kingvel Multimarcas', city: 'Jundiaí', m1: 20, m2: 24, m3: 26 },
-            { id: '18878', name: 'Vanessa | Auto Esporte', city: 'São Vicente', m1: null, m2: null, m3: null },
-            { id: '18879', name: 'Auto Esporte Multimarcas', city: 'São Vicente', m1: null, m2: null, m3: null },
-            { id: '18975', name: 'GABRIEL BORTOLUCCI - Hiperauto', city: 'Ribeirão Preto', m1: 12, m2: 21, m3: 23 },
-            { id: '19008', name: 'Gabriel | Karmann Automoveis', city: 'Campinas', m1: 15, m2: 20, m3: 18 },
-            { id: '19114', name: 'Thiago Diogo - Personalitte', city: 'Campinas', m1: 16, m2: 15, m3: 17 },
-            { id: '19610', name: 'Juliana Carrion | Perfil Veículos', city: 'Ribeirão Preto', m1: 14, m2: 18, m3: null },
-            { id: '23398', name: 'MICHEL - AUTOFORTE', city: 'Araraquara', m1: 17, m2: 27, m3: 23 },
-            { id: '23459', name: 'YASMIN MANCHINI | INTERIOR AUTOMOVEIS', city: 'São José do Rio Preto', m1: 17, m2: 14, m3: 13 },
-            { id: '23546', name: 'Claudio Oliveira - REVENDOAUTO', city: 'Carapicuíba', m1: 18, m2: 18, m3: null },
-            { id: '23596', name: 'Eduardo I Marcon Veículos', city: 'Pedreira', m1: 15, m2: 15, m3: 17 },
-            { id: '23599', name: 'Thiago Santos - TKS Veículos', city: 'Ponte Rasa', m1: 7, m2: 8, m3: null },
-            { id: '24267', name: 'LEANDRO FREITAS - Alvorada Automóveis', city: 'Nova Odessa', m1: 21, m2: 26, m3: 25 },
-            { id: '24300', name: 'Léo | Alexandre Automóveis', city: 'Piracaia', m1: 8, m2: 6, m3: 14 },
-            { id: '24332', name: 'Daniel Rodrigues | Automax Sumaré', city: 'Sumaré', m1: null, m2: null, m3: null },
-            { id: '25035', name: 'Fabio Novo - BLUE COMERCIO', city: 'Campinas', m1: 212, m2: 229, m3: 220 },
-            { id: '25501', name: 'Unimais veículos', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '25745', name: 'HIPERAUTO', city: 'Ribeirão Preto', m1: null, m2: null, m3: null },
-            { id: '28030', name: 'Gustavo Barboza | LG Automoveis', city: 'Mirassol', m1: 12, m2: 14, m3: null },
-            { id: '29682', name: 'Leandro Astúrias | Asturias Multimarcas', city: 'Guarujá', m1: 48, m2: 25, m3: 45 },
-            { id: '30608', name: 'Paulo César e Thauana | Auto +', city: 'Ribeirão Preto', m1: 43, m2: 30, m3: 45 },
-            { id: '30653', name: 'Matheus | Tonny Motors', city: 'Ribeirão Preto', m1: null, m2: null, m3: 5 },
-            { id: '30747', name: 'Matheus - TONNY MOTORS', city: 'Ribeirão Preto', m1: null, m2: null, m3: null },
-            { id: '30846', name: 'Carlos I Martini Veículos', city: 'Piracicaba', m1: 45, m2: 31, m3: 50 },
-            { id: '30937', name: 'Mavi Veiculos Ltda.', city: 'Caieiras', m1: null, m2: null, m3: null },
-            { id: '30988', name: 'Fast Lane', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '32370', name: 'Avenida veículos', city: 'Mogi Guaçu', m1: null, m2: null, m3: null },
-            { id: '33201', name: 'Karmann', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '33438', name: 'Auto Classe Multimarcas', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '33661', name: 'ASTURIAS MULTIMARCAS', city: 'Guarujá', m1: null, m2: null, m3: null },
-            { id: '33695', name: 'GSA multimarcas ltda - Guilherme', city: 'Sorocaba', m1: null, m2: null, m3: null },
-            { id: '33730', name: 'Ittmotors - Ronaldo dos Santos', city: 'Atibaia', m1: null, m2: null, m3: null },
-            { id: '33752', name: 'Leão multimarcas', city: 'Ferraz de Vasconcelos', m1: null, m2: null, m3: null },
-            { id: '33948', name: 'Victor Hugo | MP Auto', city: 'Cotia', m1: 33, m2: 26, m3: 41 },
-            { id: '34109', name: 'Felipe A. | AF Comércio de Automoveis', city: 'Botucatu', m1: 41, m2: 36, m3: null },
-            { id: '34168', name: 'Mp Auto', city: 'Cotia', m1: null, m2: null, m3: null },
-            { id: '34307', name: 'Coticar Veiculos', city: 'Cotia', m1: null, m2: null, m3: null },
-            { id: '35388', name: 'Juan Silva Figueiredo | Auto Play', city: 'São Paulo', m1: 11, m2: 15, m3: 21 },
-            { id: '35430', name: 'Douglas I Machado\'s', city: 'Batatais', m1: 42, m2: null, m3: null },
-            { id: '35749', name: 'Petrela Veículos', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '35933', name: 'César Automóveis', city: 'Americana', m1: null, m2: null, m3: null },
-            { id: '35963', name: 'PLENITUDE', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '36346', name: 'Automax - Daniel Rodrigues', city: 'Sumaré', m1: null, m2: null, m3: null },
-            { id: '36489', name: 'Car Company', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '36621', name: 'Lopes Multimarcas', city: 'Mogi das Cruzes', m1: null, m2: null, m3: null },
-            { id: '36816', name: 'R7 Motors Comércio de Veículos', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '37047', name: 'Rodoviária Veículos', city: 'Bauru', m1: null, m2: null, m3: null },
-            { id: '38181', name: 'Rafael Chamorro | Chamorro Veículos', city: 'Itapeva', m1: 27, m2: 32, m3: 22 },
-            { id: '38183', name: 'Rodrigo Molon | MM Autocar', city: 'Piracaia', m1: 11, m2: 10, m3: 11 },
-            { id: '38196', name: 'Elton | Da Cunha Multimarcas', city: 'Americana', m1: 7, m2: 4, m3: 8 },
-            { id: '38197', name: 'AF Automóveis', city: 'Botucatu', m1: null, m2: null, m3: null },
-            { id: '38200', name: 'Aline Telles | Jesner Motors', city: 'Santa Bárbara d\'Oeste', m1: null, m2: null, m3: 10 },
-            { id: '38204', name: 'Thales Alexandre | Abreu Motors', city: 'Piracicaba', m1: 4, m2: 12, m3: 8 },
-            { id: '38212', name: 'Adilson Costa | Forza Motors', city: 'Paulínia', m1: 6, m2: 8, m3: null },
-            { id: '38237', name: 'D Motos D. V. da Silva Motos', city: 'Hortolândia', m1: null, m2: null, m3: null },
-            { id: '38269', name: 'Reginaldo Felicio | Renova Multimarcas', city: 'Santa Bárbara d\'Oeste', m1: 25, m2: 28, m3: 30 },
-            { id: '38272', name: 'Roberto Amadio | Lexus MOTORS', city: 'Limeira', m1: 25, m2: null, m3: null },
-            { id: '38296', name: 'Ronaldo Veículos', city: 'Amparo', m1: null, m2: null, m3: null },
-            { id: '38305', name: 'Destaque Valinhos Comercio de Veiculos', city: 'Valinhos', m1: null, m2: null, m3: null },
-            { id: '38317', name: 'Rafael Marcelino| Auto Top Veículos', city: 'Jundiaí', m1: 8, m2: null, m3: null },
-            { id: '38322', name: 'Bom Negócio Motors Ltda', city: 'Mogi Guaçu', m1: null, m2: null, m3: null },
-            { id: '38352', name: 'Uai Veiculos - Marcos Bonfim', city: 'Socorro', m1: null, m2: null, m3: null },
-            { id: '38435', name: 'Auto play veículos', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '38511', name: 'Forza Motors', city: 'Paulínia', m1: null, m2: null, m3: null },
-            { id: '38525', name: 'Auto Top Veiculos', city: 'Jundiaí', m1: null, m2: null, m3: null },
-            { id: '38527', name: 'Renova Multimarcas', city: 'Santa Bárbara d\'Oeste', m1: null, m2: null, m3: null },
-            { id: '38641', name: 'Lexus Motors', city: 'Limeira', m1: null, m2: null, m3: null },
-            { id: '38671', name: 'Siccs Cars LTDA', city: 'Cotia', m1: null, m2: null, m3: null },
-            { id: '39307', name: 'César Pinheiro | Texas veículos', city: 'Bauru', m1: 7, m2: null, m3: null },
-            { id: '39815', name: 'Tercio Conserva| Brasil Seminovos', city: 'Osasco', m1: 43, m2: 26, m3: 37 },
-            { id: '39838', name: 'FB MOTORS PIRACICABA - Thiago', city: 'Piracicaba', m1: null, m2: null, m3: null },
-            { id: '39858', name: 'Flow Veiculos Ltda', city: 'Ribeirão Preto', m1: null, m2: null, m3: null },
-            { id: '39879', name: 'Jetor Veículos', city: 'Americana', m1: null, m2: null, m3: null },
-            { id: '39985', name: 'Henrique Sanches Said| Nova Multimarcas', city: 'Lins', m1: 20, m2: 20, m3: 22 },
-            { id: '39992', name: 'TheoMotors', city: 'Bauru', m1: null, m2: null, m3: null },
-            { id: '40027', name: 'Jorge Eduardo I Du Veículos', city: 'Lins', m1: 5, m2: 14, m3: 17 },
-            { id: '40029', name: 'Skymotos Motorcycle', city: 'Bauru', m1: null, m2: null, m3: null },
-            { id: '40038', name: 'Vargem Veículos', city: 'Vargem Grande do Sul', m1: null, m2: null, m3: null },
-            { id: '40039', name: 'Rodrigo Veículos', city: 'Jaú', m1: null, m2: null, m3: null },
-            { id: '40054', name: 'Kauan I Dante Automóveis', city: 'Botucatu', m1: 17, m2: 23, m3: 40 },
-            { id: '40114', name: 'Flow Veículos | Rafael e Hellen', city: 'Ribeirão Preto', m1: 9, m2: 11, m3: 13 },
-            { id: '40323', name: 'Flinston Car Automóveis', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '40866', name: 'Marcio | CORRÊIA VEÍCULOS', city: 'Piracicaba', m1: null, m2: null, m3: 9 },
-            { id: '41012', name: 'Guilherme | Madricar Automóveis', city: 'São Paulo', m1: 12, m2: 16, m3: 17 },
-            { id: '41136', name: 'Thiago dourado | Tork Automóveis', city: 'SP Interior', m1: 12, m2: 10, m3: 7 },
-            { id: '41284', name: 'T - MOTORS COMERCIAL LTDA', city: 'Bauru Região', m1: null, m2: null, m3: null },
-            { id: '42327', name: 'Edson Castanha I EloMixMultimarcas', city: 'Franco da Rocha', m1: 3, m2: 7, m3: 3 },
-            { id: '42650', name: 'Rafael Bertocco|RB Multimarcas', city: 'São Paulo', m1: 8, m2: 10, m3: 9 },
-            { id: '42672', name: 'Samuel|josaemultimarcasfranca', city: 'Franca', m1: 9, m2: 18, m3: 18 },
-            { id: '42675', name: 'STV- SANTA THEREZINHA VEÍCULOS', city: 'Taubaté', m1: 13, m2: 14, m3: 8 },
-            { id: '42796', name: 'CORREA VEICULOS LTDA', city: 'Piracicaba', m1: null, m2: null, m3: null },
-            { id: '43288', name: 'ANJU MOTORS - Anderson ferreira', city: 'São Pedro', m1: null, m2: null, m3: null },
-            { id: '43296', name: 'SANTA TEREZINHA VEICULOS', city: 'Taubaté', m1: null, m2: null, m3: null },
-            { id: '43331', name: 'C14 COMERCIO DE VEICULOS LTDA', city: 'Valinhos', m1: null, m2: null, m3: null },
-            { id: '43466', name: 'Samanta | D\'Black Motors e Kainni Veículos', city: 'Jundiaí', m1: null, m2: null, m3: null },
-            { id: '43589', name: 'DRIVE MOTORS SP LTDA', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '43596', name: 'Luiz Eduardo I Dado Car', city: 'Americana', m1: 14, m2: 15, m3: null },
-            { id: '43807', name: 'Wanderson Nunues e Alexina| RNC VEÍCULOS', city: 'Atibaia', m1: 12, m2: 13, m3: 9 },
-            { id: '43869', name: 'Elizabeth,Filipe, Tiago | Ideal Veículos', city: 'Ribeirão Pires', m1: 22, m2: 35, m3: 30 },
-            { id: '43999', name: 'BRASIL SEMINOVOS LTDA - Tercio', city: 'Osasco', m1: null, m2: null, m3: null },
-            { id: '44006', name: 'AUTO SEGURA COMERCIO', city: 'Santo André', m1: null, m2: null, m3: null },
-            { id: '44054', name: 'Rodrigo | CRV AUTOS', city: 'São Paulo', m1: 5, m2: 6, m3: 7 },
-            { id: '44092', name: 'Personalitte comércio', city: 'Campinas', m1: null, m2: null, m3: null },
-            { id: '44409', name: 'Junior Alaercio |Junnior Veículos', city: 'Mogi Guaçu', m1: 4, m2: 8, m3: 13 },
-            { id: '44423', name: 'AUTO DREAM COMERCIO', city: 'Americana', m1: null, m2: null, m3: null },
-            { id: '44929', name: 'Ricardo Roccho | Rocco Automóveis', city: 'São José do Rio Preto', m1: 5, m2: 7, m3: 11 },
-            { id: '45233', name: 'R&O MOTORS LTDA', city: 'Valinhos', m1: null, m2: null, m3: null },
-            { id: '46000', name: 'Émerson | GRACIANO MULTIMARCAS', city: 'Cândido Mota', m1: 1, m2: 1, m3: 1 },
-            { id: '46194', name: 'AUTO SHOPPING DA CIDADE', city: 'Jacareí', m1: null, m2: null, m3: null },
-            { id: '46202', name: 'ROCCO VEICULOS', city: 'São José do Rio Preto', m1: null, m2: null, m3: null },
-            { id: '46206', name: 'Robert Gledson | RGM Motos', city: 'Bragança Paulista', m1: 5, m2: 12, m3: 10 },
-            { id: '46229', name: 'Junnior Veículos', city: 'Mogi Guaçu', m1: null, m2: null, m3: null },
-            { id: '46244', name: 'Eglae I Sofix Car', city: 'Osasco', m1: 1, m2: 5, m3: 3 },
-            { id: '46259', name: 'RGM MOTOS BRAGANCA PAULISTA', city: 'Bragança Paulista', m1: null, m2: null, m3: null },
-            { id: '46297', name: 'SOFIX CAR', city: 'Osasco', m1: null, m2: null, m3: null },
-            { id: '46491', name: 'TKS VEICULOS LTDA', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '46493', name: 'Paulo e Ana Paula | P4 VEICULOS', city: 'Jundiaí', m1: 18, m2: 16, m3: 19 },
-            { id: '46524', name: 'Priscilla e Caio | Mapri Veículos', city: 'Araraquara', m1: 41, m2: 30, m3: 28 },
-            { id: '46545', name: 'Paulo | P4 Veículos', city: 'Jundiaí', m1: null, m2: null, m3: null },
-            { id: '46667', name: 'GRACIANO MULTIMARCAS', city: 'Cândido Mota', m1: null, m2: null, m3: null },
-            { id: '47419', name: 'NUNES AUTOMÓVEIS', city: 'Atibaia', m1: null, m2: null, m3: null },
-            { id: '47643', name: 'AUTOFORTE COMERCIO', city: 'Araraquara', m1: 17, m2: null, m3: null },
-            { id: '47674', name: 'José | Assis Multimarcas', city: 'Limeira', m1: null, m2: null, m3: 16 },
-            { id: '47760', name: 'GTS VEICULOS LTDA - Raphael', city: 'Osasco', m1: null, m2: null, m3: null },
-            { id: '47895', name: 'Danilo | Ideal Car Multimarcas', city: 'São Paulo', m1: 14, m2: 4, m3: 14 },
-            { id: '47927', name: 'Assis Multimarcas', city: 'Limeira', m1: null, m2: null, m3: null },
-            { id: '47978', name: 'Renan | R-Nan Motors', city: 'Limeira', m1: null, m2: null, m3: 23 },
-            { id: '48096', name: 'Guilherme Hissashi | Gui Automóveis', city: 'Mogi das Cruzes', m1: 9, m2: 15, m3: null },
-            { id: '48103', name: 'Rnan motors', city: 'Limeira', m1: null, m2: null, m3: null },
-            { id: '48199', name: 'Caipira Multimarcas', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '48206', name: 'LP MULTIMARCAS LTDA', city: 'Santos', m1: null, m2: null, m3: null },
-            { id: '48398', name: 'Personal Car', city: 'Mauá', m1: null, m2: null, m3: null },
-            { id: '48419', name: 'Vinicius| LK Veiculos', city: 'Itapevi', m1: 10, m2: 10, m3: 9 },
-            { id: '48656', name: 'Saulo |', city: 'Fernandópolis', m1: null, m2: null, m3: null },
-            { id: '48714', name: 'Vitor | RV Veículos', city: 'Jales', m1: null, m2: null, m3: null },
-            { id: '48757', name: 'Eduardo insfran | Imperial carros', city: 'Votuporanga', m1: null, m2: null, m3: null },
-            { id: '48828', name: 'LK Veículos', city: 'Itapevi', m1: null, m2: null, m3: null },
-            { id: '48833', name: 'André Santana | CURTCAR VEICULOS', city: 'São Paulo', m1: 6, m2: 2, m3: 6 },
-            { id: '49057', name: 'Mariana | JM VEICULOS', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '49095', name: 'IMPERIAL MULTIMARCAS', city: 'Votuporanga', m1: null, m2: null, m3: null },
-            { id: '49191', name: 'Jose Carlos - Junior Veiculos Jr', city: 'Itaquaquecetuba', m1: 1, m2: 2, m3: 2 },
-            { id: '49196', name: 'JM VEICULOS LTDA', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '49258', name: 'Alessandra I Miro Motors', city: 'São José do Rio Preto', m1: 8, m2: 2, m3: 2 },
-            { id: '49263', name: 'Luiz Henrique Forlim', city: 'Caraguatatuba', m1: null, m2: null, m3: null },
-            { id: '49301', name: 'Joao Paulo Ireno | Budinha Veiculos', city: 'José Bonifácio', m1: null, m2: null, m3: null },
-            { id: '49365', name: 'Ideal Car Multimarcas', city: 'São Paulo', m1: null, m2: null, m3: null },
-            { id: '49382', name: 'Aloísio | RB Veículos', city: 'Paulo de Faria', m1: null, m2: null, m3: 2 },
-            { id: '49442', name: 'Rodrigo Costa I Real Veiculos', city: 'Votuporanga', m1: 22, m2: 12, m3: 15 },
-            { id: '49446', name: 'Luiz Fernando Pavaneti | Dacar', city: 'São José do Rio Preto', m1: 18, m2: 28, m3: 24 },
-            { id: '49451', name: 'Carlos e Thiago| Auto Seg', city: 'Bebedouro', m1: 4, m2: 2, m3: 5 },
-            { id: '49463', name: 'DACAR VEICULOS', city: 'São José do Rio Preto', m1: null, m2: null, m3: null },
-            { id: '49464', name: 'AUTOSEG COMERCIO', city: 'Bebedouro', m1: null, m2: null, m3: null },
-            { id: '49465', name: 'CS NOGUEIRA COMERCIO', city: 'Fernandópolis', m1: null, m2: null, m3: null },
-            { id: '49471', name: 'R COSTA DE OLIVEIRA', city: 'Votuporanga', m1: null, m2: null, m3: null },
-            { id: '49474', name: 'SERGIO E VINICIUS| GAVI AUTOMOVEIS', city: 'São José do Rio Preto', m1: null, m2: null, m3: null },
-            { id: '49475', name: 'GAVI COMERCIO DE AUTOMOVEIS', city: 'São José do Rio Preto', m1: null, m2: null, m3: null },
-            { id: '49476', name: 'LUCIANA CHIACCHIO ORTUNHO', city: 'Fernandópolis', m1: null, m2: null, m3: null },
-            { id: '49477', name: 'BUDINHA VEICULOS LTDA', city: 'José Bonifácio', m1: null, m2: null, m3: null },
-            { id: '49483', name: 'Miro Motors', city: 'São José do Rio Preto', m1: null, m2: null, m3: null },
-            { id: '49508', name: 'RV COMERCIO DE VEICULOS', city: 'Jales', m1: null, m2: null, m3: null },
-            { id: '49509', name: 'BRUNA e Leandro | Leal Multimarcas', city: 'Mirassol', m1: null, m2: null, m3: null },
-            { id: '49510', name: 'BRUNA SABADIN DE LIMA', city: 'Mirassol', m1: null, m2: null, m3: null },
-            { id: '49537', name: 'RB VEICULOS', city: 'Paulo de Faria', m1: null, m2: null, m3: null },
-            { id: '49600', name: 'Sandro - Sandro Brandi Automóveis', city: 'Presidente Prudente', m1: 16, m2: 14, m3: null },
-            { id: '49759', name: 'BRANDI COMERCIO DE VEICULOS', city: 'Presidente Prudente', m1: null, m2: null, m3: null },
-            { id: '49767', name: 'FORLIM MULTIMARCAS LTDA', city: 'Caraguatatuba', m1: null, m2: null, m3: null }
-        ];
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        function switchTab(tabId) {
-            const sections = ['visao-geral', 'rotas', 'clientes', 'gideao', 'sp-estado'];
-            sections.forEach(sec => {
-                document.getElementById(`sec-${sec}`).classList.add('hidden');
-                document.getElementById(`tab-${sec}`).classList.remove('tab-active');
-                document.getElementById(`tab-${sec}`).classList.add('tab-inactive');
-            });
+            document.getElementById('syncStatus').textContent = "A extrair IDs e novos dados...";
             
-            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabId}`).classList.add('tab-active');
-            document.getElementById(`tab-${tabId}`).classList.remove('tab-inactive');
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    
+                    results.data.forEach(row => {
+                        const id = findColumnValue(row, ['id']) || '';
+                        const name = findColumnValue(row, ['titulo', 'nome', 'cliente']) || '';
+                        
+                        const rawValor = findColumnValue(row, ['valordopagamento', 'valor', 'valortotal']);
+                        const rawParcelas = findColumnValue(row, ['quantidadedeparcelas', 'parcelas']);
+
+                        const valor = parseVal(rawValor);
+                        const parcelas = parseParc(rawParcelas);
+
+                        // Tenta encontrar o cliente na base unificada
+                        let targetClient = unifiedClientsData.find(c => {
+                            let baseName = c.name.toLowerCase().split('(')[0].trim();
+                            let csvName = name.toLowerCase();
+                            return csvName.includes(baseName) || baseName.includes(csvName);
+                        });
+
+                        if (targetClient && id !== '') {
+                            targetClient.id = id;
+                            if (valor > 0) {
+                                targetClient.valor = valor;
+                                targetClient.parcelas = parcelas;
+                            }
+                        }
+                    });
+
+                    updateAll();
+                    document.getElementById('syncStatus').textContent = "Sincronizado via CSV";
+                    alert(`Importação Completa!\nOs IDs do Pipedrive e possíveis atualizações contratuais foram associados aos seus clientes.`);
+                }
+            });
         }
 
-        function initSalesChart() {
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            
-            let totalJan = clientsData.reduce((sum, c) => sum + (c.m1 || 0), 0);
-            let totalFeb = clientsData.reduce((sum, c) => sum + (c.m2 || 0), 0);
-            let totalMar = clientsData.reduce((sum, c) => sum + (c.m3 || 0), 0);
+        // ==========================================
+        // LÓGICA DE INTERFACE E GRÁFICOS
+        // ==========================================
 
-            new Chart(ctx, {
+        function switchTab(id) {
+            ['visao-geral', 'rotas', 'clientes', 'gideao'].forEach(t => {
+                const sec = document.getElementById(`sec-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+                if (sec) sec.classList.add('hidden');
+                if (btn) btn.className = "tab-inactive pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2";
+            });
+            const activeSec = document.getElementById(`sec-${id}`);
+            const activeBtn = document.getElementById(`tab-${id}`);
+            if (activeSec) activeSec.classList.remove('hidden');
+            if (activeBtn) activeBtn.className = "tab-active pb-3 px-1 text-sm whitespace-nowrap flex items-center gap-2";
+        }
+
+        function updateAll() {
+            const all = unifiedClientsData;
+            const mrrTotal = all.reduce((s, c) => s + calculateMRR(c), 0);
+            const valorTotal = all.reduce((s, c) => s + c.valor, 0);
+            const active = all.filter(c => calculateMRR(c) > 0).length;
+
+            const elLojas = document.getElementById('kpiLojas');
+            const elValor = document.getElementById('kpiValorTotal');
+            const elMrr = document.getElementById('kpiMrrTotal');
+            const elTicket = document.getElementById('kpiTicketMedio');
+
+            if (elLojas) elLojas.textContent = all.length;
+            if (elValor) elValor.textContent = formatMoney(valorTotal);
+            if (elMrr) elMrr.textContent = formatMoney(mrrTotal);
+            if (elTicket) elTicket.textContent = formatMoney(active > 0 ? mrrTotal/active : 0);
+
+            initCharts(all);
+            
+            const filter1 = document.getElementById('productFilter');
+            if(filter1) {
+                filter1.innerHTML = '<option value="all">Todos os Produtos</option>';
+                let prodSet = new Set();
+                all.forEach(c => {
+                    if (c.produto && c.produto !== 'Aguardando CSV' && c.produto !== '-') {
+                        c.produto.split('+').forEach(p => prodSet.add(p.trim()));
+                        c.produto.split('/').forEach(p => prodSet.add(p.trim()));
+                    }
+                });
+                const cleanSet = new Set();
+                prodSet.forEach(p => {
+                    if(!p.includes('+') && !p.includes('/')) cleanSet.add(p);
+                });
+
+                [...cleanSet].sort().forEach(p => filter1.add(new Option(p, p)));
+            }
+
+            renderTable(unifiedClientsData, 'clientTableBody', 'tableCount');
+        }
+
+        function renderTable(data, tbodyId, countId) {
+            const tbody = document.getElementById(tbodyId);
+            const countEl = document.getElementById(countId);
+            if (!tbody || !countEl) return;
+            
+            tbody.innerHTML = '';
+            countEl.textContent = data.length;
+
+            data.forEach(c => {
+                const mrr = calculateMRR(c);
+                const isSemProduto = !c.produto || c.produto === '-';
+                const link = (c.id && c.id !== '-') ? `https://gwebcarconsultoriaemarketingautomotivo.pipedrive.com/deal/${c.id}` : '#';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-orange-50/30 transition-colors border-b text-sm">
+                        <td class="p-4 font-bold text-slate-800">
+                            <span class="block">${c.name}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="text-xs font-bold ${isSemProduto ? 'text-slate-400' : 'text-slate-700'} block">${c.produto}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="text-[11px] text-slate-500 block max-w-[250px] truncate" title="${c.city}"><i data-lucide="map-pin" class="inline h-3 w-3 mr-0.5 mb-0.5"></i>${c.city}</span>
+                            ${c.id !== '-' ? `<a href="${link}" target="_blank" class="text-[10px] text-orange-600 hover:text-orange-800 hover:underline flex items-center gap-1 mt-1">
+                                Abrir no CRM (ID: ${c.id}) <i data-lucide="external-link" class="h-3 w-3"></i>
+                            </a>` : `<span class="text-[10px] text-slate-400 mt-1 block">Aguardando CSV para ID</span>`}
+                        </td>
+                        <td class="p-4 text-right text-slate-500">${c.valor > 0 ? formatMoney(c.valor) : '<span class="text-xs text-red-400">Pendente</span>'}</td>
+                        <td class="p-4 text-center font-medium">${c.valor > 0 ? c.parcelas + 'x' : '-'}</td>
+                        <td class="p-4 text-right font-black ${mrr > 0 ? 'text-orange-700 bg-orange-50/50' : 'text-red-500 bg-red-50/50'}">${mrr > 0 ? formatMoney(mrr) : 'Falta Info MRR'}</td>
+                    </tr>`;
+            });
+            lucide.createIcons();
+        }
+
+        function filterPlanilha() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const prod = document.getElementById('productFilter').value;
+            const filtered = unifiedClientsData.filter(c => 
+                (c.name.toLowerCase().includes(term) || c.city.toLowerCase().includes(term) || c.id.includes(term) || c.produto.toLowerCase().includes(term)) &&
+                (prod === 'all' || c.produto.includes(prod))
+            );
+            renderTable(filtered, 'clientTableBody', 'tableCount');
+        }
+
+        function initCharts(data) {
+            const ctxSales = document.getElementById('salesChart');
+            const ctxMrr = document.getElementById('mrrProductChart');
+            if (!ctxSales || !ctxMrr) return;
+
+            const cityCount = {};
+            data.forEach(c => {
+                let parts = c.city.split('-');
+                let city = parts.length > 1 ? parts[parts.length - 2].split(',').pop().trim() : 'Campinas'; 
+                cityCount[city] = (cityCount[city] || 0) + 1;
+            });
+            const topCities = Object.entries(cityCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            if(charts.sales) charts.sales.destroy();
+            charts.sales = new Chart(ctxSales.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: ['Jan 2026', 'Fev 2026', 'Mar 2026'],
+                    labels: topCities.map(i => i[0]),
                     datasets: [{
-                        label: 'Volume de Veículos Vendidos',
-                        data: [totalJan, totalFeb, totalMar],
-                        backgroundColor: '#f97316',
-                        borderRadius: 6,
-                        barThickness: 60
+                        data: topCities.map(i => i[1]),
+                        backgroundColor: '#ea580c', borderRadius: 5
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            const mrrByProd = {};
+            data.forEach(c => { 
+                const mrr = calculateMRR(c);
+                let valToAdd = mrr > 0 ? mrr : 1; 
+                
+                if(c.produto && c.produto !== 'Aguardando CSV') {
+                    const parts = c.produto.split('+').length > 1 ? c.produto.split('+') : c.produto.split('/');
+                    parts.forEach(p => {
+                        let prodName = p.trim();
+                        mrrByProd[prodName] = (mrrByProd[prodName] || 0) + valToAdd;
+                    });
+                }
+            });
+
+            if(charts.mrr) charts.mrr.destroy();
+            charts.mrr = new Chart(ctxMrr.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(mrrByProd).length > 0 ? Object.keys(mrrByProd) : ['Aguardando Leitura'],
+                    datasets: [{
+                        data: Object.values(mrrByProd).length > 0 ? Object.values(mrrByProd) : [1],
+                        backgroundColor: Object.keys(mrrByProd).length > 0 ? ['#ea580c', '#f97316', '#fb923c', '#fdba74', '#fed7aa', '#10b981', '#3b82f6'] : ['#f1f5f9'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '70%', 
+                    plugins: { 
+                        legend: { position: 'bottom' },
                         tooltip: {
-                            backgroundColor: '#1e293b',
-                            padding: 12,
-                            titleFont: { size: 14 },
-                            bodyFont: { size: 14 }
+                            callbacks: {
+                                label: function(context) {
+                                    const mrrTotal = data.reduce((s, c) => s + calculateMRR(c), 0);
+                                    if(mrrTotal === 0) return ' Lojas com este produto: ' + context.raw;
+                                    return ' MRR Estimado: ' + formatMoney(context.raw);
+                                }
+                            }
                         }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
-                    }
+                    } 
                 }
             });
         }
 
         function initRoutes() {
             const container = document.getElementById('route-list-container');
-            routeData.forEach(route => {
+            if(!container) return;
+            container.innerHTML = '';
+            strategicRoutes.forEach(r => {
                 const btn = document.createElement('button');
-                btn.className = 'w-full text-left p-4 rounded-xl border border-slate-200 bg-white hover:border-orange-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 flex flex-col gap-1 group';
-                btn.onclick = () => showRouteDetails(route.id);
-                btn.id = `btn-route-${route.id}`;
-                
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white hover:border-orange-500 hover:shadow-md transition-all flex flex-col gap-2";
+                btn.onclick = () => {
+                    document.getElementById('route-empty-state').classList.add('hidden');
+                    document.getElementById('route-content').classList.remove('hidden');
+                    document.querySelectorAll('#route-list-container button').forEach(b => b.classList.remove('border-orange-500', 'ring-2'));
+                    btn.classList.add('border-orange-500', 'ring-2', 'ring-orange-500');
+
+                    document.getElementById('detail-route-name').textContent = r.name;
+                    document.getElementById('detail-route-focus').textContent = r.focus;
+                    document.getElementById('detail-route-count').textContent = r.stores.length + ' Lojas';
+                    
+                    const stops = document.getElementById('detail-route-stops');
+                    if(stops) {
+                        stops.innerHTML = r.stores.map((s, i) => `
+                            <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                <span class="w-6 h-6 rounded-full bg-orange-600 text-white flex items-center justify-center text-xs font-bold shrink-0">${i+1}</span>
+                                <div>
+                                    <span class="font-bold text-slate-700 block">${s.client}</span>
+                                    <span class="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5"><i data-lucide="map-pin" class="h-3 w-3"></i>${s.address}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    lucide.createIcons();
+                };
                 btn.innerHTML = `
-                    <div class="flex items-center justify-between w-full">
-                        <span class="font-bold text-slate-800 group-hover:text-orange-600 transition-colors">${route.name}</span>
-                        <span class="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded">${route.stops.length} Lojas</span>
-                    </div>
-                    <span class="text-xs text-slate-500 line-clamp-1">${route.focus}</span>
-                `;
+                    <div class="flex justify-between w-full items-center">
+                        <span class="font-bold text-slate-800">${r.name}</span>
+                        <span class="text-xs font-bold text-orange-700 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">${r.stores.length} Lojas</span>
+                    </div>`;
                 container.appendChild(btn);
             });
+            lucide.createIcons();
         }
 
-        function showRouteDetails(routeId) {
-            document.getElementById('route-empty-state').classList.add('hidden');
-            document.getElementById('route-content').classList.remove('hidden');
-
-            const routeListBtns = document.querySelectorAll('#route-list-container button');
-            routeListBtns.forEach(btn => btn.classList.remove('border-orange-500', 'ring-2', 'ring-orange-500'));
-            const activeBtn = document.getElementById(`btn-route-${routeId}`);
-            if(activeBtn) activeBtn.classList.add('border-orange-500', 'ring-2', 'ring-orange-500');
-
-            const route = routeData.find(r => r.id === routeId);
-            
-            document.getElementById('detail-route-name').textContent = route.name;
-            document.getElementById('detail-route-focus').textContent = route.focus;
-            document.getElementById('detail-route-count').textContent = `${route.stops.length} Clientes`;
-            
-            if(route.warning) {
-                document.getElementById('detail-route-warning').classList.remove('hidden');
-                document.getElementById('detail-route-warning-text').textContent = route.warning;
-            } else {
-                document.getElementById('detail-route-warning').classList.add('hidden');
-            }
-
-            const stopsContainer = document.getElementById('detail-route-stops');
-            stopsContainer.innerHTML = '';
-            
-            route.stops.forEach((stop, index) => {
-                const isAlert = stop.address.includes('CONFIRMAR');
-                stopsContainer.innerHTML += `
-                    <div class="flex items-start gap-4 p-4 rounded-lg ${isAlert ? 'bg-red-50 border border-red-100' : 'bg-slate-50 border border-slate-100'}">
-                        <div class="flex flex-col items-center mt-1">
-                            <div class="w-8 h-8 rounded-full ${isAlert ? 'bg-red-500' : 'bg-orange-600'} text-white flex items-center justify-center font-bold text-sm shadow-sm z-10 relative">
-                                ${index + 1}
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-start gap-2">
-                                <h4 class="font-bold text-slate-800">${stop.client}</h4>
-                                <a href="https://gwebcarconsultoriaemarketingautomotivo.pipedrive.com/deal/${stop.id}" target="_blank" title="Abrir Negócio no Pipedrive" class="shrink-0 text-xs bg-white text-orange-600 px-2 py-1 rounded border border-orange-200 hover:bg-orange-50 transition-colors flex items-center gap-1 font-medium shadow-sm">
-                                    <span>Pipedrive</span> <span class="text-[10px]">↗</span>
-                                </a>
-                            </div>
-                            <div class="flex items-center gap-1 mt-1 text-sm ${isAlert ? 'text-red-600 font-semibold' : 'text-slate-600'}">
-                                <span>📍</span> <span>${stop.address}</span>
-                            </div>
-                            <div class="flex items-center gap-1 mt-1 text-xs text-slate-500">
-                                <span>🚗</span> <span>${stop.dist}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function initClientTable() {
-            renderTable(clientsData);
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = clientsData.filter(c => 
-                    c.name.toLowerCase().includes(term) || 
-                    c.city.toLowerCase().includes(term) || 
-                    c.id.includes(term)
-                );
-                renderTable(filtered);
-            });
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('clientTableBody');
-            tbody.innerHTML = '';
-            document.getElementById('tableCount').textContent = data.length;
-
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">Nenhum cliente encontrado.</td></tr>`;
-                return;
-            }
-
-            data.forEach(client => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 border-b border-slate-100">
-                            <div class="font-bold text-slate-800">${client.name}</div>
-                            <div class="text-xs text-slate-500 mt-1">
-                                ID: <a href="https://gwebcarconsultoriaemarketingautomotivo.pipedrive.com/deal/${client.id}" target="_blank" title="Abrir Negócio no Pipedrive" class="text-orange-600 hover:text-orange-800 hover:underline font-medium inline-flex items-center gap-1">
-                                    ${client.id} <span class="text-[10px]">↗</span>
-                                </a>
-                            </div>
-                        </td>
-                        <td class="p-4 border-b border-slate-100">
-                            <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${client.city}</span>
-                        </td>
-                        <td class="p-4 border-b border-slate-100 text-right font-medium text-slate-700">${client.m1 || '-'}</td>
-                        <td class="p-4 border-b border-slate-100 text-right font-medium text-slate-700">${client.m2 || '-'}</td>
-                        <td class="p-4 border-b border-slate-100 text-right font-medium text-slate-700">${client.m3 || '-'}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        function initSpTable() {
-            renderSpTable(spClientsData);
-            document.getElementById('searchSpInput').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = spClientsData.filter(c => 
-                    c.name.toLowerCase().includes(term) || 
-                    c.city.toLowerCase().includes(term) || 
-                    c.id.includes(term)
-                );
-                renderSpTable(filtered);
-            });
-        }
-
-        function renderSpTable(data) {
-            const tbody = document.getElementById('spTableBody');
-            tbody.innerHTML = '';
-            document.getElementById('spTableCount').textContent = data.length;
-
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">Nenhum cliente encontrado no estado de SP com este filtro.</td></tr>`;
-                return;
-            }
-
-            data.forEach(client => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 border-b border-slate-100">
-                            <div class="font-bold text-slate-800">${client.name}</div>
-                            <div class="text-xs text-slate-500 mt-1">
-                                ID: <a href="https://gwebcarconsultoriaemarketingautomotivo.pipedrive.com/deal/${client.id}" target="_blank" title="Abrir Negócio no Pipedrive" class="text-orange-600 hover:text-orange-800 hover:underline font-medium inline-flex items-center gap-1">
-                                    ${client.id} <span class="text-[10px]">↗</span>
-                                </a>
-                            </div>
-                        </td>
-                        <td class="p-4 border-b border-slate-100">
-                            <span class="bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded text-xs">${client.city}</span>
-                        </td>
-                        <td class="p-4 border-b border-slate-100 text-right font-medium text-slate-700">${client.m1 || '-'}</td>
-                        <td class="p-4 border-b border-slate-100 text-right font-medium text-slate-700">${client.m2 || '-'}</td>
-                        <td class="p-4 border-b border-slate-100 text-right font-medium text-slate-700">${client.m3 || '-'}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        // --- Lógica da Modal de Imagem ---
-        function openImageModal() {
-            const modal = document.getElementById('imageModal');
-            modal.classList.remove('hidden');
-            // Pequeno delay para a transição de opacidade funcionar
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
-        }
-
-        function closeImageModal() {
-            const modal = document.getElementById('imageModal');
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300); // Tempo da transição
-        }
-
-        // --- Lógica da Inteligência do Gideão (Gemini API) ---
-        const apiKey = ""; 
-
-        async function fetchWithRetry(url, options, retries = 5) {
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return await response.json();
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    await new Promise(res => setTimeout(res, delays[i]));
-                }
-            }
-        }
-
-        async function analisarClienteGideao() {
-            const inputData = document.getElementById('crmInput').value.trim();
-            const errorDiv = document.getElementById('gideaoError');
-            
-            if (!inputData) {
-                errorDiv.textContent = "Por favor, cole os dados do cliente antes de analisar.";
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-            errorDiv.classList.add('hidden');
-
-            // Configuração da UI para loading
+        async function copiarEAbrirGemini() {
+            const txt = document.getElementById('crmInput').value.trim();
+            if(!txt) return;
+            const prompt = `Analise os dados deste cliente extraídos do meu CRM para identificar oportunidades de Upsell ou melhoria no processo de vendas:\n\n${txt}`;
+            await navigator.clipboard.writeText(prompt);
             document.getElementById('gideaoEmptyState').classList.add('hidden');
+            document.getElementById('gideaoResult').classList.remove('hidden');
+            window.open('https://gemini.google.com/app', '_blank');
+        }
+
+        function resetGideao() {
+            document.getElementById('crmInput').value = '';
             document.getElementById('gideaoResult').classList.add('hidden');
-            document.getElementById('gideaoLoading').classList.remove('hidden');
+            document.getElementById('gideaoEmptyState').classList.remove('hidden');
+        }
 
-            const systemPrompt = `Você é o Gideão, um assistente inteligente especialista em vendas automotivas B2B, consultoria e análise de dados de CRM. 
-Seu objetivo é analisar os dados brutos ou anotações coladas do CRM pelo consultor Peterson e retornar um relatório focado e altamente tático.
-Sua resposta deve ter OBRIGATORIAMENTE 3 seções curtas e diretas:
-1. Resumo do Cliente: O que é mais importante saber sobre ele agora?
-2. Produtos/Serviços: Separe e liste os produtos/serviços que o cliente já tem interesse ou que fazem sentido para ele com base no texto.
-3. Prontidão para Upsell: Avalie de forma clara se o cliente ESTÁ ou NÃO ESTÁ pronto para um Upsell ou Cross-sell, e explique rapidamente o porquê com base no comportamento relatado.
-
-Formate sua resposta utilizando quebras de linha e coloque os títulos das seções em **negrito**. Seja persuasivo e focado em fechar vendas.`;
-
-            const payload = {
-                contents: [{ parts: [{ text: inputData }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
-            };
-
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-                const result = await fetchWithRetry(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text || "O Gideão não conseguiu gerar a análise no momento.";
-                
-                // Formatação simples de Markdown (Negrito) para HTML
-                const formattedText = generatedText
-                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-orange-700 text-base">$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em class="text-slate-600">$1</em>');
-                
-                document.getElementById('gideaoOutput').innerHTML = formattedText;
-                
-            } catch (e) {
-                document.getElementById('gideaoOutput').innerHTML = `<span class="text-red-500 font-bold">Erro de comunicação com o Gideão:</span><br>${e.message}`;
-            } finally {
-                document.getElementById('gideaoLoading').classList.add('hidden');
-                document.getElementById('gideaoResult').classList.remove('hidden');
-            }
+        function openImageModal() {
+            document.getElementById('imageModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('imageModal').classList.add('opacity-100'), 10);
+        }
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.remove('opacity-100');
+            setTimeout(() => document.getElementById('imageModal').classList.add('hidden'), 300);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            initSalesChart();
             initRoutes();
-            initClientTable();
-            initSpTable();
+            updateAll();
+            lucide.createIcons();
+            
+            document.getElementById('searchInput').addEventListener('input', filterPlanilha);
+            document.getElementById('productFilter').addEventListener('change', filterPlanilha);
         });
     </script>
 </body>
